@@ -10,14 +10,6 @@ import requests
 import lxml.html as lh
 import os
 
-
-try:
-    api_key = os.getenv('ALPHA_API_KEY')
-except:
-    os.environ['ALPHA_API_KEY'] = input("Insert alpha vantage API key: ")
-
-num_years = 1
-
 #Template for later API calls
 def retrieve_data(function: str, symbol: str, api_key: str) -> dict:
     url = f'https://www.alphavantage.co/query?function={function}&symbol={symbol}&apikey={api_key}'
@@ -75,6 +67,14 @@ def retrieve_fy_growth_estimate(symbol: str):
 
 if __name__ == '__main__':
 
+    try:
+        api_key = os.getenv('ALPHA_API_KEY')
+    except:
+        os.environ['ALPHA_API_KEY'] = input("Insert alpha vantage API key: ")
+
+    num_years = 10
+    percent_return = 15
+
     #read in symbol to be process
     symbol = sys.argv[1]
 
@@ -91,12 +91,9 @@ if __name__ == '__main__':
         annual_BVPS.append(statistics.mean(quarterly_BVPS[i: i+4]))
         i += 4
 
-    #finalize dataframe and output
+    #add Book Value per share annualized values to dataframe
     data['BVPS'] = annual_BVPS
-    data['PE'] = retrieve_annual_PE(symbol, api_key)
-    df = pd.DataFrame(data, columns = ['BVPS', 'PE'])
-    print(df)
-
+    
     #calculate trailing twelve month BVPS for 1 year and trailing five month for 5 year
     ttm_BVPS_growth = ((quarterly_BVPS[0]/quarterly_BVPS[3]) ** (1) - 1)*100
     tfy_BVPS_growth = ((quarterly_BVPS[0]/quarterly_BVPS[19]) ** (1/5) - 1)*100
@@ -107,10 +104,14 @@ if __name__ == '__main__':
             current_eps = retrieve_current_EPS(symbol, api_key)
             equity_growth_rate = tfy_BVPS_growth
             forward_PE = sum(data['PE'])/5
+            data['PE'] = retrieve_annual_PE(symbol, api_key)
             break
         except KeyError:
             time.sleep(3)
     
+    df = pd.DataFrame(data, columns = ['BVPS', 'PE'])
+    print(df)
+
     #If estimates are less than predicted, go with the estimates ( Future Price/Earnings and Future growth rate)
     if forward_PE > equity_growth_rate * 2:
         forward_PE = equity_growth_rate * 2
@@ -128,8 +129,12 @@ if __name__ == '__main__':
     #calculate the sticker price of the stock today relative to what predicted price will be in the future
     time_to_double = np.log(2)/np.log(1 + (equity_growth_rate/100))
     num_of_doubles = num_years/time_to_double
-    future_EPS = current_eps * 2 ** num_of_doubles
-    sticker_price = forward_PE * future_EPS
+    future_price = forward_PE * current_eps * 2 ** num_of_doubles
+    
+    return_time_to_double = np.log(2)/np.log(1 + (percent_return/100))
+    number_of_equity_doubles = num_years/return_time_to_double
+    print(2 ** number_of_equity_doubles)
+    sticker_price = future_price/( 2 ** number_of_equity_doubles )
 
     print("Future Price:  $", sticker_price)
     print("On-Sale Price: $", sticker_price/2)
