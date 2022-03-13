@@ -54,7 +54,7 @@ def retrieve_quarterly_BVPS(symbol :str, api_key: str):
     return quarterly_BVPS
 
 def retrieve_fy_growth_estimate(symbol: str):
-    url = "https://www.zacks.com/stock/quote/PAGS/detailed-estimates"
+    url = "https://www.zacks.com/stock/quote/" + symbol + "/detailed-estimates"
     page = requests.get(url, headers = {'User-Agent' : '008'})
     doc = lh.fromstring(page.content)
     td_elements = doc.xpath('//td')
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     percent_return = 15
 
     #read in symbol to be process
-    symbol = sys.argv[1]
+    symbol = 'PAGS'
 
     #initialize data that will become dataframe
     data = dict()
