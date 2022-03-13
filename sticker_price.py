@@ -1,4 +1,5 @@
 import json
+from multiprocessing.sharedctypes import Value
 import requests
 import pandas as pd
 import numpy as np
@@ -28,24 +29,46 @@ def retrieve_current_EPS(symbol: str, api_key: str):
         current_eps += round(float(quarter['reportedEPS']), 2)
     return current_eps
 
-def retrieve_annual_PE(symbol: str, api_key: str):
-    annual_EPS = retrieve_data('EARNINGS', symbol, api_key)['annualEarnings'][0:5]
+def retrieve_annual_PE(symbol: str, api_key: str, num_years: int):
+    quarterly_EPS = retrieve_data('EARNINGS', symbol, api_key)['quarterlyEarnings']
     annual_PE = []
 
-    for year in annual_EPS:
-        h_data = yf.download(symbol, year['fiscalDateEnding'])['Close']
+    i = 0
+    while i < len(quarterly_EPS) and i < num_years * 4:
+        h_data = yf.download(symbol, quarterly_EPS[i]['fiscalDateEnding'])['Close']
         price = float(h_data[0])
-        eps = float(year['reportedEPS'])
-        print(str(year['fiscalDateEnding']) + " --- " + str(price) + " --- " + str(eps))
+        try:
+            eps = float(quarterly_EPS[i]['reportedEPS']) + float(quarterly_EPS[i + 1]['reportedEPS']) + float(quarterly_EPS[i + 2]['reportedEPS']) + float(quarterly_EPS[i + 3]['reportedEPS'])
+        except IndexError:
+            try: 
+                eps = float(quarterly_EPS[i]['reportedEPS']) + float(quarterly_EPS[i + 1]['reportedEPS']) + float(quarterly_EPS[i + 2]['reportedEPS'])
+            except IndexError:
+                try:
+                    eps = float(quarterly_EPS[i]['reportedEPS']) + float(quarterly_EPS[i + 1]['reportedEPS'])
+                except IndexError:
+                    try:
+                        eps = float(quarterly_EPS[i]['reportedEPS'])
+                    except:
+                        print("This shouldn't be possible")
+
+        print(str(quarterly_EPS[i]['fiscalDateEnding']) + " --- " + str(price) + " --- " + str(eps))
         annual_PE.append(price/eps)
+        i += 4
+
+    if( len(annual_PE) != num_years ):
+            eps = float(quarterly_EPS[len(quarterly_EPS) - 1]['reportedEPS'])
+            h_data = yf.download(symbol, quarterly_EPS[len(quarterly_EPS) - 1]['fiscalDateEnding'])['Close']
+            price = float(h_data[0])
+            annual_PE.append(price/eps)
 
     return annual_PE
 
 def retrieve_quarterly_BVPS(symbol :str, api_key: str):
     quarterly_BVPS = []
     balance_sheets = retrieve_balance_sheets(symbol, api_key)
+    if(balance_sheets[0]['reportedCurrency'] != 'USD'):
+        print('These values are supplied in: ' + str(balance_sheets[0]['reportedCurrency']))
 
-    
     for quarter in balance_sheets:
         try:
             quarterly_BVPS.append(round(float(quarter['totalShareholderEquity'])/float(quarter['commonStockSharesOutstanding']), 3))
@@ -83,43 +106,55 @@ if __name__ == '__main__':
     annual_BVPS = []
 
     #retrieve quarterly book value per share data
-    quarterly_BVPS = retrieve_quarterly_BVPS(symbol, api_key)
+    while(True):
+        try:
+            quarterly_BVPS = retrieve_quarterly_BVPS(symbol, api_key)
+            break
+        except KeyError:
+            time.sleep(3)
 
     #annualize this data for dataframe
     i = 0
-    while i < len(quarterly_BVPS):
+    while i < len(quarterly_BVPS) and i < 20:
         annual_BVPS.append(statistics.mean(quarterly_BVPS[i: i+4]))
         i += 4
 
     #add Book Value per share annualized values to dataframe
     data['BVPS'] = annual_BVPS
     
-    #calculate trailing twelve month BVPS for 1 year and trailing five month for 5 year
+    #calculate twelve month BVPS for 1 year and trailing five month for 5 year
     ttm_BVPS_growth = ((quarterly_BVPS[0]/quarterly_BVPS[3]) ** (1) - 1)*100
-    tfy_BVPS_growth = ((quarterly_BVPS[0]/quarterly_BVPS[19]) ** (1/5) - 1)*100
+    tfy_BVPS_growth = ((quarterly_BVPS[0]/quarterly_BVPS[len(quarterly_BVPS) - 1]) ** (1/(len(quarterly_BVPS)/4)) - 1)*100
 
     #Retrieve current EPS and set values for equation
     while(True):
         try:
-            data['PE'] = retrieve_annual_PE(symbol, api_key)
+            data['PE'] = retrieve_annual_PE(symbol, api_key, len(data['BVPS']))
             current_eps = retrieve_current_EPS(symbol, api_key)
             equity_growth_rate = tfy_BVPS_growth
             forward_PE = sum(data['PE'])/5
             break
         except KeyError:
             time.sleep(3)
-    
-    df = pd.DataFrame(data, columns = ['BVPS', 'PE'])
+    try:
+        df = pd.DataFrame(data, columns = ['BVPS', 'PE'])
+    except ValueError:
+        print(len(data['BVPS']))
+        print(len(data['PE']))
     print(df)
 
     #If estimates are less than predicted, go with the estimates ( Future Price/Earnings and Future growth rate)
-    if forward_PE > equity_growth_rate * 2:
+    if forward_PE > equity_growth_rate.real * 2:
         forward_PE = equity_growth_rate * 2
 
-    analyst_growth_estimate = float(retrieve_fy_growth_estimate(symbol))
+    try:
+        analyst_growth_estimate = float(retrieve_fy_growth_estimate(symbol))
+    except ValueError:
+        print("No analyst growth rate available")
+        analyst_growth_estimate = equity_growth_rate.real
 
-    if equity_growth_rate > analyst_growth_estimate:
-        equity_growth_rate = analyst_growth_estimate
+    if equity_growth_rate.real > analyst_growth_estimate.real:
+        equity_growth_rate = analyst_growth_estimate.real
 
     print('Current EPS: ', current_eps)
     print('Average equity growth rate: ', equity_growth_rate)
