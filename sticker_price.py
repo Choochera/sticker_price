@@ -76,7 +76,7 @@ if __name__ == '__main__':
     percent_return = 15
 
     #read in symbol to be process
-    symbol = 'PAGS'
+    symbol = sys.argv[1]
 
     #initialize data that will become dataframe
     data = dict()
@@ -101,10 +101,10 @@ if __name__ == '__main__':
     #Retrieve current EPS and set values for equation
     while(True):
         try:
+            data['PE'] = retrieve_annual_PE(symbol, api_key)
             current_eps = retrieve_current_EPS(symbol, api_key)
             equity_growth_rate = tfy_BVPS_growth
             forward_PE = sum(data['PE'])/5
-            data['PE'] = retrieve_annual_PE(symbol, api_key)
             break
         except KeyError:
             time.sleep(3)
@@ -136,5 +136,5 @@ if __name__ == '__main__':
     print(2 ** number_of_equity_doubles)
     sticker_price = future_price/( 2 ** number_of_equity_doubles )
 
-    print("Future Price:  $", sticker_price)
+    print("Sticker Price:  $", sticker_price)
     print("On-Sale Price: $", sticker_price/2)
