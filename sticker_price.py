@@ -34,6 +34,7 @@ def retrieve_data(function: str, symbol: str, api_key: str) -> dict:
             json.loads(data)['Note']
             attempts += 1
             time.sleep(3) #log message 
+            print('Attempt ' + str(attempts) + ' failed to retrieve data from API. Trying again...')
         except KeyError:
             return json.loads(data)
 
@@ -75,19 +76,10 @@ def retrieve_annual_PE(symbol: str, api_key: str, num_years: int):
     while i + 4 < len(quarterly_EPS) and i < num_years * 4:
         h_data = yf.download(symbol, quarterly_EPS[i]['reportedDate'])['Close']
         price = float(h_data[0])
-        try:
-            eps = float(quarterly_EPS[i]['reportedEPS']) + float(quarterly_EPS[i + 1]['reportedEPS']) + float(quarterly_EPS[i + 2]['reportedEPS']) + float(quarterly_EPS[i + 3]['reportedEPS'])
-        except IndexError:
-            try: 
-                eps = float(quarterly_EPS[i]['reportedEPS']) + float(quarterly_EPS[i + 1]['reportedEPS']) + float(quarterly_EPS[i + 2]['reportedEPS'])
-            except IndexError:
-                try:
-                    eps = float(quarterly_EPS[i]['reportedEPS']) + float(quarterly_EPS[i + 1]['reportedEPS'])
-                except IndexError:
-                    try:
-                        eps = float(quarterly_EPS[i]['reportedEPS'])
-                    except:
-                        raise Exception("Error: This Symbol has no reported EPS")
+
+        eps = 0
+        for quarter in quarterly_EPS[i : i + 4]:
+            eps += float(quarter['reportedEPS'])
 
         print(str(quarterly_EPS[i]['reportedDate']) + " --- " + str(price) + " --- " + str(eps))
         annual_PE.append(price/eps)
