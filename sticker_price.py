@@ -29,7 +29,7 @@ def retrieve_data(function: str, symbol: str, api_key: str) -> dict:
 
     #Make limited attempts to retrieve data from API
     attempts = 0
-    while(attempts <= 3):
+    while(attempts < 3):
         try: 
             json.loads(data)['Note']
             attempts += 1
@@ -135,6 +135,18 @@ def retrieve_fy_growth_estimate(symbol: str):
     
     return -1
 
+def retrieve_benchmark_ratio_price(symbol: str, api_key: str, benchmark: float):
+    ttm_revenue: float = 0
+
+    # Calculate ttm revenue total by adding reported revenues from last 4 quarters
+    revenue = retrieve_data('INCOME_STATEMENT', symbol, api_key)['quarterlyReports'][0 : 4]
+    shares_outstanding = retrieve_data('OVERVIEW', symbol, api_key)['SharesOutstanding']
+    for quarter in revenue:
+        ttm_revenue += float(quarter['totalRevenue'])
+
+    # Equation for price based on provided market benchmark = (revenue / shares outstanding) * benchmark price-sales ratio
+    return round(ttm_revenue / float(shares_outstanding), 3) * benchmark
+
 if __name__ == '__main__':
 
     #Access OS environmental variable alpha key, or save a new one
@@ -200,6 +212,7 @@ if __name__ == '__main__':
         # Calculate the sticker price of the stock today relative to what predicted price will be in the future
         num_years = 10
         percent_return = 15
+        benchmark_price_sales_ratio = 3.01
 
         # Plug in acquired values into Rule #1 equation
         time_to_double = np.log(2)/np.log(1 + (equity_growth_rate/100))
@@ -213,6 +226,7 @@ if __name__ == '__main__':
 
         print("Sticker Price:  $", sticker_price)
         print("On-Sale Price: $", sticker_price/2)
-    
+        print("Price-Sales Ratio Price Estimate: $", retrieve_benchmark_ratio_price(symbol, api_key, benchmark_price_sales_ratio))
+
     except Exception as e:
         print(str(e))
