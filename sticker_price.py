@@ -11,11 +11,11 @@ import lxml.html as lh
 import sys
 from datetime import datetime, timedelta
 
-MAX_NUMBER_OF_THREADS=16
+MAX_NUMBER_OF_THREADS=10
 h_data = dict()
 
 # Rule 1 equation application. Uses PE and equity growth to predict what price will be based on required rate of return and number of years.
-def send_SEC_api_request(symbol: str, element: str):
+def send_SEC_api_request(symbol: str, element: str) -> requests.Response:
     headers = {'User-Agent': "your@email.com"}
     tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
     tickers_cik = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0).values[0])
@@ -26,12 +26,16 @@ def send_SEC_api_request(symbol: str, element: str):
     response = requests.get(url, headers=headers)
     return response
 
-def retrieve_quarterly_shareholder_equity(symbol: str):
+def retrieve_quarterly_shareholder_equity(symbol: str) -> list[dict]:
     response = send_SEC_api_request(symbol, "StockholdersEquity")
     try:
         data = response.json()
     except json.decoder.JSONDecodeError:
-        raise Exception('Stockholders equity data not available')
+        try:
+            response = send_SEC_api_request(symbol, "LiabilitiesAndStockholdersEquity")
+            data = response.json()
+        except json.decoder.JSONDecodeError as e:
+            raise Exception('Stockholders equity data not available')
 
     qrtly_shareholder_equity = []
     for i in range(len(data['units']['USD'])):
@@ -41,7 +45,7 @@ def retrieve_quarterly_shareholder_equity(symbol: str):
         qrtly_shareholder_equity.append(val)
     return qrtly_shareholder_equity
 
-def retrieve_quarterly_outstanding_shares(symbol: str):
+def retrieve_quarterly_outstanding_shares(symbol: str) -> list[dict]:
     try:
         response = send_SEC_api_request(symbol, "CommonStockSharesIssued")
         data = response.json()
@@ -57,7 +61,7 @@ def retrieve_quarterly_outstanding_shares(symbol: str):
         qrtly_outstanding_shares.append(val)
     return qrtly_outstanding_shares
 
-def retrieve_quarterly_EPS(symbol: str):
+def retrieve_quarterly_EPS(symbol: str) -> list[dict]:
     quarterly_EPS = send_SEC_api_request(symbol, 'EarningsPerShareBasic')
     data = quarterly_EPS.json()
     quarterly_EPS = []
@@ -74,12 +78,13 @@ def retrieve_quarterly_EPS(symbol: str):
     
     return quarterly_EPS
 
-def retrieve_historical_data(symbols: list[str]):
+def retrieve_historical_data(symbols: list[str]) -> None:
     global h_data
     h_data = yf.download(symbols, period="10y")
 
-def retrieve_quarterly_PE(symbol: str):
+def retrieve_quarterly_PE(symbol: str) -> list[float]:
     global h_data
+
     # ttm PE = price at earnings announcement / ttm EPS
     quarterly_EPS = retrieve_quarterly_EPS(symbol)
     quarterly_PE=[]
@@ -112,7 +117,7 @@ def retrieve_quarterly_PE(symbol: str):
 
     return quarterly_PE
 
-def retrieve_quarterly_BVPS(symbol :str):
+def retrieve_quarterly_BVPS(symbol :str) -> list[dict]:
     quarterly_BVPS = []
     try: 
         qrtly_shareholder_equity = retrieve_quarterly_shareholder_equity(symbol)
@@ -140,7 +145,7 @@ def retrieve_quarterly_BVPS(symbol :str):
 
     return quarterly_BVPS
 
-def retrieve_fy_growth_estimate(symbol: str):
+def retrieve_fy_growth_estimate(symbol: str) -> float:
     url = "https://www.zacks.com/stock/quote/" + symbol + "/detailed-estimates"
 
     try:
@@ -163,7 +168,7 @@ def retrieve_fy_growth_estimate(symbol: str):
     
     return -1
 
-def retrieve_benchmark_ratio_price(symbol: str, benchmark: float):
+def retrieve_benchmark_ratio_price(symbol: str, benchmark: float) -> float:
     ttm_revenue: float = 0
     qrtly_revenue = []
     # Calculate ttm revenue total by adding reported revenues from last 4 quarters
@@ -186,7 +191,7 @@ def retrieve_benchmark_ratio_price(symbol: str, benchmark: float):
     # Equation for price based on provided market benchmark = (revenue / shares outstanding) * benchmark price-sales ratio
     return round(ttm_revenue / float(shares_outstanding), 3) * benchmark
 
-def calculate_sticker_price(symbol, trailing_years, equity_growth_rate, annual_PE, annual_EPS):
+def calculate_sticker_price(symbol, trailing_years, equity_growth_rate, annual_PE, annual_EPS) -> dict:
     result = dict()
     forward_PE = statistics.mean(annual_PE)
     current_qrtly_EPS = annual_EPS[0]/4
@@ -231,14 +236,13 @@ def calculate_sticker_price(symbol, trailing_years, equity_growth_rate, annual_P
 
     return result
         
-def append_price_values(priceData: dict, additions: dict):
+def append_price_values(priceData: dict, additions: dict) -> None:
     priceData['trailing_years'].append(additions['trailing_years'])
     priceData['sticker_price'].append(additions['sticker_price'])
     priceData['sale_price'].append(additions['sale_price'])
     priceData['ratio_price'].append(additions['ratio_price'])
 
-def retrieve_sticker_price_data(symbol: str):
-
+def retrieve_sticker_price_data(symbol: str) -> dict:
     priceData = dict()
     priceData['trailing_years']=[]
     priceData['sticker_price']=[]
@@ -299,7 +303,7 @@ def retrieve_sticker_price_data(symbol: str):
     
     return priceData
 
-def checkIsOnSale(symbol: str, priceData: dict, stocksOnSale: list[str]):
+def checkIsOnSale(symbol: str, priceData: dict, stocksOnSale: list[str]) -> None:
     stock = yf.Ticker(symbol)
     price = stock.history(period='1d')['Close'][0]
     
@@ -312,8 +316,32 @@ def checkIsOnSale(symbol: str, priceData: dict, stocksOnSale: list[str]):
     else:
         print( symbol + " is not on sale")
 
+def retrieve_stock_list(stocks: list[str]) -> None:
+    try:
+        with open('stockList.txt') as f:
+            lines = f.readlines()
+            for line in lines:
+                stock = line.split('\n')[0]
+                if(len(stock) > 0):
+                    stocks.append(stock)
+    except FileNotFoundError:
+       with open('stockList.txt', 'w') as f:
+            None
+
+def retrieve_processed_symbols(processedSymbols: list[str]) -> None:
+    try:
+        with open('processedSymbols.txt') as f:
+                lines = f.readlines()
+                for line in lines:
+                    stock = line.split('\n')[0]
+                    if(len(stock) > 0):
+                        processedSymbols.append(stock)
+    except FileNotFoundError:
+        with open(r'processedSymbols.txt', 'w') as fp:
+            None
+
 class generatorThread (threading.Thread):
-   def __init__(self, threadID, name, counter, symbols):
+   def __init__(self, threadID, name, counter, symbols: list[str]):
       threading.Thread.__init__(self)
       self.threadID = threadID
       self.name = name
@@ -325,34 +353,45 @@ class generatorThread (threading.Thread):
                 checkIsOnSale(symbol, retrieve_sticker_price_data(symbol), stocksOnSale)
             except Exception as e: 
                 print("Could not retrieve data for " + symbol, e)
+            processedSymbols.append(symbol)
 
 if __name__ == "__main__":
 
-    stocksOnSale = []
-
-    #read in symbol to be process
+    stocksOnSale: list[str]= []
+    processedSymbols: list[str] = []
     stocks = sys.argv[1:]
-    if(len(stocks) == 0):
-        with open('stockList.txt') as f:
-            lines = f.readlines()
-            for line in lines:
-                stock = line.split('\n')[0]
-                if(len(stock) > 0):
-                    stocks.append(stock)
-    
+
     startTime = time.time()
 
+    if( len(stocks) == 0 ):
+        retrieve_stock_list(stocks)
+        retrieve_processed_symbols(processedSymbols)
+        stocks = [symbol for symbol in stocks if symbol not in processedSymbols]
+
+    if( len(stocks) == 0 ):
+        raise Exception("All symbols in list have been processed")
+
     retrieve_historical_data(stocks)
+
+    if( len(stocks)%MAX_NUMBER_OF_THREADS == 0 ):
+        step = int(len(stocks)/MAX_NUMBER_OF_THREADS)
+    else:
+        step = int(len(stocks)/MAX_NUMBER_OF_THREADS) + 1
+
     threads = []
-    beginning = 0
-    end = len(stocks)
-    step = 16
-    for i in range(beginning, end, step):
-        threads.append(generatorThread(i + 1, "thread_" + str(i + 1), i+1, stocks[i:i+step]))
-        threads[int(i/16)].start()
+    stock_groups = []
+    for i in range(0, len(stocks), step):
+        stock_groups.append(stocks[i:i+step])
+    for i in range(len(stock_groups)):
+        threads.append(generatorThread(i + 1, "thread_" + str(i + 1), i+1, symbols = stock_groups[i]))
+        threads[int(i)].start()
     for t in threads:
         t.join()
     del(threads)
+    
+    with open(r'processedSymbols.txt', 'a') as fp:
+        for symbol in processedSymbols:
+            fp.write("%s\n" % symbol)
 
     end = time.time()
     
