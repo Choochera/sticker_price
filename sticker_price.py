@@ -1,4 +1,5 @@
 import json
+import simplejson
 import requests
 import pandas as pd
 import numpy as np
@@ -10,6 +11,7 @@ import requests
 import lxml.html as lh
 import sys
 from datetime import datetime, timedelta
+from forex_python.converter import CurrencyRates
 
 MAX_NUMBER_OF_THREADS=10
 h_data = dict()
@@ -26,16 +28,30 @@ def send_SEC_api_request(symbol: str, element: str) -> requests.Response:
     response = requests.get(url, headers=headers)
     return response
 
+def retrieve_facts(symbol: str) -> requests.Response:
+    headers = {'User-Agent': "your@email.com"}
+    tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
+    tickers_cik = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0).values[0])
+    tickers_cik["cik_str"] = tickers_cik["cik_str"].astype(str).str.zfill(10)
+    cik = tickers_cik[tickers_cik["ticker"] == symbol]['cik_str']
+    cik = cik.reset_index(drop = True)
+    url = "https://data.sec.gov/api/xbrl/companyfacts/CIK" + cik[0] + ".json"
+    response = requests.get(url, headers=headers)
+    return response
+
 def retrieve_quarterly_shareholder_equity(symbol: str) -> list[dict]:
-    response = send_SEC_api_request(symbol, "StockholdersEquity")
     try:
+        response = send_SEC_api_request(symbol, "StockholdersEquity")
         data = response.json()
-    except json.decoder.JSONDecodeError:
+    except simplejson.errors.JSONDecodeError:
         try:
             response = send_SEC_api_request(symbol, "LiabilitiesAndStockholdersEquity")
             data = response.json()
-        except json.decoder.JSONDecodeError as e:
-            raise Exception('Stockholders equity data not available')
+        except simplejson.errors.JSONDecodeError:
+            try:
+                return retrieve_non_gaap_shareholder_equity(symbol)
+            except:
+                raise Exception("Cannot retrieve shareholder equity data")
 
     qrtly_shareholder_equity = []
     for i in range(len(data['units']['USD'])):
@@ -45,13 +61,38 @@ def retrieve_quarterly_shareholder_equity(symbol: str) -> list[dict]:
         qrtly_shareholder_equity.append(val)
     return qrtly_shareholder_equity
 
+def retrieve_non_gaap_shareholder_equity(symbol: str) -> list[dict]:
+    c = CurrencyRates()
+    response = retrieve_facts(symbol)
+    try:
+        data = response.json()
+        data = data['facts']['ifrs-full']['Equity']
+    except json.decoder.JSONDecoderError:
+        raise Exception('Error retrieving facts')
+    
+    currency = list(data['units'].keys())[0]
+    qrtly_shareholder_equity = []
+    for i in range(len(data['units'][currency])):
+        val = {
+            data['units'][currency][i]['end']: c.convert(currency, 'USD', float(data['units'][currency][i]['val']))
+        }
+        qrtly_shareholder_equity.append(val)
+    
+    return qrtly_shareholder_equity
+
 def retrieve_quarterly_outstanding_shares(symbol: str) -> list[dict]:
     try:
         response = send_SEC_api_request(symbol, "CommonStockSharesIssued")
         data = response.json()
-    except json.decoder.JSONDecodeError:
-        response = send_SEC_api_request(symbol, "CommonStockSharesOutstanding")
-        data = response.json()
+    except simplejson.errors.JSONDecodeError:
+        try:
+            response = send_SEC_api_request(symbol, "CommonStockSharesOutstanding")
+            data = response.json()
+        except simplejson.errors.JSONDecodeError:
+            try: 
+                data = retrieve_non_gaap_outstanding_shares(symbol)
+            except:
+                raise Exception("Shares outstanding data not available")
 
     qrtly_outstanding_shares = []
     for i in range(len(data['units']['shares'])):
@@ -61,15 +102,58 @@ def retrieve_quarterly_outstanding_shares(symbol: str) -> list[dict]:
         qrtly_outstanding_shares.append(val)
     return qrtly_outstanding_shares
 
+def retrieve_non_gaap_outstanding_shares(symbol: str) -> dict:
+    response = retrieve_facts(symbol)
+    try:
+        data = response.json()
+        data = data['facts']['ifrs-full']['NumberOfSharesOutstanding']
+    except json.decoder.JSONDecoderError:
+        raise Exception('Error retrieving facts')
+
+    return data
+
 def retrieve_quarterly_EPS(symbol: str) -> list[dict]:
     quarterly_EPS = send_SEC_api_request(symbol, 'EarningsPerShareBasic')
-    data = quarterly_EPS.json()
+    try:
+        data = quarterly_EPS.json()
+    except simplejson.errors.JSONDecodeError:
+        try:
+            return retrieve_non_gaap_quarterly_EPS(symbol)
+        except:
+            raise Exception("Earnings per share data not available")
+
     quarterly_EPS = []
     for period in data['units']['USD/shares']:
         try:
-            if 'Q' in period['frame']:
+            if 'Q' in period['frame'] or 'Q' in period['fp']:
                 val = {
                     period['end']: float(period['val']),
+                }
+                quarterly_EPS.append(val)
+        except:
+            #Skip values without frame 
+            None
+
+    return quarterly_EPS
+
+def retrieve_non_gaap_quarterly_EPS(symbol: str) -> list[dict]:
+    c = CurrencyRates()
+    response = retrieve_facts(symbol)
+    try:
+        data = response.json()
+        data = data['facts']['ifrs-full']['BasicEarningsLossPerShare']
+    except simplejson.errors.JSONDecodeError:
+        raise Exception('Error retrieving facts')
+
+    key = list(data['units'].keys())[0]
+    currency = key.replace('/shares', '')
+    
+    quarterly_EPS = []
+    for period in data['units'][key]:
+        try:
+            if 'Q' in period['frame'] or 'Q' in period['fp']:
+                val = {
+                    period['end']: c.convert(currency, 'USD', float(period['val'])),
                 }
                 quarterly_EPS.append(val)
         except:
@@ -97,7 +181,7 @@ def retrieve_quarterly_PE(symbol: str) -> list[float]:
         if date.weekday() == 5:
             date = date - timedelta(days = 1)
         if date.weekday() == 6:
-            date = date + timedelta(days = 2)
+            date = date - timedelta(days = 2)
         
         date = str(date)
         price = 0
@@ -114,7 +198,6 @@ def retrieve_quarterly_PE(symbol: str) -> list[float]:
             quarterly_PE.append(price/eps)
         except ZeroDivisionError:
             quarterly_PE.append(0)
-
     return quarterly_PE
 
 def retrieve_quarterly_BVPS(symbol :str) -> list[dict]:
@@ -174,7 +257,7 @@ def retrieve_benchmark_ratio_price(symbol: str, benchmark: float) -> float:
     # Calculate ttm revenue total by adding reported revenues from last 4 quarters
     try:
         revenue = send_SEC_api_request(symbol, 'GrossProfit').json()
-    except json.decoder.JSONDecodeError:
+    except simplejson.errors.JSONDecodeError:
         revenue = send_SEC_api_request(symbol, 'Revenues').json()
 
     for period in revenue['units']['USD']:
@@ -231,7 +314,7 @@ def calculate_sticker_price(symbol, trailing_years, equity_growth_rate, annual_P
 
     try:
         result['ratio_price'] = retrieve_benchmark_ratio_price(symbol, benchmark_price_sales_ratio)
-    except json.decoder.JSONDecodeError:
+    except simplejson.errors.JSONDecodeError:
         result['ratio_price'] = 0
 
     return result
@@ -278,6 +361,10 @@ def retrieve_sticker_price_data(symbol: str) -> dict:
     # Calculate annual PE
     annual_PE = []
     quarterly_PE = retrieve_quarterly_PE(symbol)
+
+    if ( len(quarterly_PE) < 4 ):
+        raise Exception("Not enough quarterly data")
+
     i = len(quarterly_PE) - 4
     while i > 0 and i > len(quarterly_PE) - 44:
         quarters = quarterly_PE[i: i+4]
@@ -371,7 +458,7 @@ if __name__ == "__main__":
     if( len(stocks) == 0 ):
         raise Exception("All symbols in list have been processed")
 
-    retrieve_historical_data(stocks)
+    retrieve_historical_data(stocks[:50])
 
     if( len(stocks)%MAX_NUMBER_OF_THREADS == 0 ):
         step = int(len(stocks)/MAX_NUMBER_OF_THREADS)
