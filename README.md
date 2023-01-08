@@ -6,4 +6,3 @@ I am not a financial advisor nor am I qualified to give financial advice. The us
 world results is entirely the responsibility of the user.
 Also, Thank you!
 This was a fun one to write. 
-## This program requires the use of an Alpha Vantage API key to access stock market data
