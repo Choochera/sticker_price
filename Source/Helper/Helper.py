@@ -1,8 +1,9 @@
 import requests
 import pandas as pd
 import lxml.html as lh
+import Helper.IHelper
 
-class helper():
+class helper(Helper.IHelper.IHelper):
     
     def __init__(self):
         None

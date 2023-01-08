@@ -1,21 +1,20 @@
-import Data_Retriever
+
+import Source.ComponentFactory
 from datetime import datetime, timedelta
-import yfinance as yf
 import statistics
 import numpy as np
+import Data_Calculator.IData_Calculator
 
-class dataCalculator():
+class dataCalculator(Data_Calculator.IData_Calculator.IData_Calculator):
 
-    def __init__(self):
-        self.retriever = Data_Retriever.dataRetriever()
-        self.h_data = dict()
+    def __init__(self, symbol: str, h_data: dict):
+        self.symbol = symbol
+        self.retriever = Source.ComponentFactory.ComponentFactory.getDataRetrieverObject(self.symbol)
+        self.h_data = h_data
 
-    def download_historical_data(self, symbols: list[str]) -> None:
-        self.h_data = yf.download(symbols, period="10y")
-
-    def calculate_quarterly_PE(self, symbol: str) -> list[float]:
+    def calculate_quarterly_PE(self) -> list[float]:
         # ttm PE = price at earnings announcement / ttm EPS
-        quarterly_EPS = self.retriever.retrieve_quarterly_EPS(symbol)
+        quarterly_EPS = self.retriever.retrieve_quarterly_EPS()
         quarterly_PE=[]
 
         for i in range(len(quarterly_EPS)):
@@ -29,7 +28,7 @@ class dataCalculator():
             price = 0
             while price == 0:
                 try:
-                    price = float(self.h_data.loc[date]['Adj Close'][symbol])
+                    price = float(self.h_data.loc[date]['Adj Close'][self.symbol])
                 except KeyError:
                     date = datetime.strptime(date, '%Y-%m-%d').date()
                     date = date + timedelta(days= 1)
@@ -42,11 +41,11 @@ class dataCalculator():
                 quarterly_PE.append(0)
         return quarterly_PE
 
-    def calculate_quarterly_BVPS(self, symbol :str) -> list[dict]:
+    def calculate_quarterly_BVPS(self) -> list[dict]:
         quarterly_BVPS = []
         try: 
-            qrtly_shareholder_equity = self.retriever.retrieve_quarterly_shareholder_equity(symbol)
-            qrtly_outstanding_shares = self.retriever.retrieve_quarterly_outstanding_shares(symbol)
+            qrtly_shareholder_equity = self.retriever.retrieve_quarterly_shareholder_equity()
+            qrtly_outstanding_shares = self.retriever.retrieve_quarterly_outstanding_shares()
         except Exception as e:
             raise Exception("Cannot retrieve quarterly BVPS - ", e)
 
@@ -70,7 +69,7 @@ class dataCalculator():
 
         return quarterly_BVPS
 
-    def calculate_sticker_price(self, symbol, trailing_years, equity_growth_rate, annual_PE, annual_EPS) -> dict:
+    def calculate_sticker_price(self, trailing_years: int, equity_growth_rate: float, annual_PE: list, annual_EPS: list) -> dict:
         result = dict()
         forward_PE = statistics.mean(annual_PE)
         current_qrtly_EPS = annual_EPS[0]/4
@@ -81,7 +80,7 @@ class dataCalculator():
         #     forward_PE = equity_growth_rate * 2
 
         try:
-            analyst_growth_estimate = float(self.retriever.retrieve_fy_growth_estimate(symbol))
+            analyst_growth_estimate = float(self.retriever.retrieve_fy_growth_estimate())
         except ValueError:
             analyst_growth_estimate = equity_growth_rate.real
 
@@ -107,7 +106,7 @@ class dataCalculator():
         result['trailing_years'] = trailing_years
         result['sticker_price'] = sticker_price
         result['sale_price'] = sticker_price/2
-        result['ratio_price'] = self.retriever.retrieve_benchmark_ratio_price(symbol, benchmark_price_sales_ratio)
+        result['ratio_price'] = self.retriever.retrieve_benchmark_ratio_price(benchmark_price_sales_ratio)
 
         return result
 
@@ -117,17 +116,17 @@ class dataCalculator():
         priceData['sale_price'].append(additions['sale_price'])
         priceData['ratio_price'].append(additions['ratio_price'])
 
-    def calculate_sticker_price_data(self, symbol: str) -> dict:
+    def calculate_sticker_price_data(self) -> dict:
         priceData = dict()
         priceData['trailing_years']=[]
         priceData['sticker_price']=[]
         priceData['sale_price']=[]
         priceData['ratio_price']=[]
-
         annual_BVPS = []
 
         #retrieve quarterly book value per share data
-        quarterly_BVPS = self.calculate_quarterly_BVPS(symbol)
+        quarterly_BVPS = self.calculate_quarterly_BVPS()
+        priceData['quarterly_bvps'] = quarterly_BVPS
 
         #annualize quarterly book values for dataframe consistency
         first_quarter = []
@@ -148,11 +147,12 @@ class dataCalculator():
             tfy_BVPS_growth = ( ( annual_BVPS[0]/annual_BVPS[4] ) ** ( 1/5 ) - 1 ) * 100
             tty_BVPS_growth =  ( ( annual_BVPS[0]/annual_BVPS[len(annual_BVPS) - 1] ) ** ( 1/len(annual_BVPS) ) - 1 ) * 100
         except IndexError:
-            raise Exception("Not enough historical data available for symbol: " + symbol)
+            raise Exception("Not enough historical data available for symbol: " + self.symbol)
 
         # Calculate annual PE
         annual_PE = []
-        quarterly_PE = self.calculate_quarterly_PE(symbol)
+        quarterly_PE = self.calculate_quarterly_PE()
+        priceData['quarterly_pe'] = quarterly_PE
 
         if ( len(quarterly_PE) < 4 ):
             raise Exception("Not enough quarterly data")
@@ -164,7 +164,8 @@ class dataCalculator():
             i -= 4
 
         # Retrieve current EPS and set values for equation
-        quarterly_EPS = self.retriever.retrieve_quarterly_EPS(symbol)
+        quarterly_EPS = self.retriever.retrieve_quarterly_EPS()
+        priceData['quarterly_eps'] = quarterly_EPS
         annual_EPS = []
         i = len(quarterly_EPS) - 4
         while i > 0 and i > len(quarterly_EPS) - 44:
@@ -173,11 +174,11 @@ class dataCalculator():
             for quarter in quarters:
                 s += list(quarter.values())[0]
             if(s < 0):
-                raise Exception(symbol + " has negative annual EPS")
+                raise Exception(self.symbol + " has negative annual EPS")
             annual_EPS.append(float(s))
             i -= 4
-        self.append_price_values(priceData, self.calculate_sticker_price(symbol, 1, tyy_BVPS_growth, annual_PE, annual_EPS))
-        self.append_price_values(priceData, self.calculate_sticker_price(symbol, 5, tfy_BVPS_growth, annual_PE, annual_EPS))
-        self.append_price_values(priceData, self.calculate_sticker_price(symbol, 10, tty_BVPS_growth, annual_PE, annual_EPS))
+        self.append_price_values(priceData, self.calculate_sticker_price(1, tyy_BVPS_growth, annual_PE, annual_EPS))
+        self.append_price_values(priceData, self.calculate_sticker_price(5, tfy_BVPS_growth, annual_PE, annual_EPS))
+        self.append_price_values(priceData, self.calculate_sticker_price(10, tty_BVPS_growth, annual_PE, annual_EPS))
         
         return priceData
