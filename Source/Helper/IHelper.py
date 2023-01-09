@@ -17,3 +17,15 @@ class IHelper(ABC):
     @abstractmethod
     def retrieve_fy_growth_estimate(self, symbol: str) -> float:
         pass
+
+    @abstractmethod
+    def add_padding_to_collection(dict_list: dict) -> None:
+        pass
+
+    @abstractmethod
+    def write_processed_symbols(symbol: str, symbols: list[str]) -> None:
+        pass
+
+    @abstractmethod
+    def download_historical_data(symbols: list[str]) -> list:
+        pass

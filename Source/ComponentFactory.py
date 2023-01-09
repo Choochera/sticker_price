@@ -1,5 +1,3 @@
-import sys, os
-sys.path.extend([f'./{name}' for name in os.listdir(".") if os.path.isdir(name)])
 import Helper.Helper
 import Helper.IHelper
 import Data_Retriever

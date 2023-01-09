@@ -1,5 +1,4 @@
-import simplejson
-import Source.ComponentFactory as ComponentFactory
+import Source.ComponentFactory as CF
 import Data_Retriever.IData_Retriever
 import Data_Retriever.Fact_Parser_Factory.Fact_Parser_Factory as parserFactory
 
@@ -7,7 +6,7 @@ class dataRetriever(Data_Retriever.IData_Retriever.IData_Retriever):
 
     def __init__(self, symbol: str):
         self.symbol = symbol
-        self.helper = ComponentFactory.ComponentFactory.getHelperObject()
+        self.helper = CF.ComponentFactory.getHelperObject()
         try:
             self.facts = self.helper.retrieve_facts(symbol)
         except Exception as e:

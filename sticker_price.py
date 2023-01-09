@@ -1,13 +1,17 @@
+import sys, os
+sys.path.extend([f'./{name}' for name in os.listdir(".") if os.path.isdir(name)])
 import pandas as pd
 import threading
 import yfinance as yf
-import yfinance.shared as shared
 import time
 import sys
-import Source.ComponentFactory
+import Source.ComponentFactory as CF
+import Data_Calculator.Data_Calculator as DC
+import Helper.Helper as Helper
 
-MAX_NUMBER_OF_THREADS=10
-lock = threading.Lock()
+MAX_NUMBER_OF_THREADS: int = 10
+lock: threading.Lock = threading.Lock()
+helper: Helper.helper = CF.ComponentFactory.getHelperObject()
 
 # Rule 1 equation application. Uses PE and equity growth to predict what price will be based on required rate of return and number of years.
 def checkIsOnSale(symbol: str, priceData: dict, stocksOnSale: list[str]) -> None:
@@ -17,57 +21,11 @@ def checkIsOnSale(symbol: str, priceData: dict, stocksOnSale: list[str]) -> None
     if( (sale_prices[0] > 0 and sale_prices[1] > 0 and sale_prices[2] > 0) and (price < sale_prices[0] or price < sale_prices[1] or price < sale_prices[2])):
         print( symbol + " is on sale")
         stocksOnSale.append(symbol)
-        pad_dict_list(priceData, '')
+        helper.add_padding_to_collection(priceData, '')
         df = pd.DataFrame.from_dict(priceData)
         df.to_csv('Output/' + symbol + '.csv', index=False)
     else:
         print( symbol + " is not on sale")
-
-def pad_dict_list(dict_list, padel):
-    lmax = 0
-    for lname in dict_list.keys():
-        lmax = max(lmax, len(dict_list[lname]))
-    for lname in dict_list.keys():
-        ll = len(dict_list[lname])
-        if  ll < lmax:
-            dict_list[lname] += [padel] * (lmax - ll)
-    return dict_list
-
-def retrieve_stock_list(stocks: list[str]) -> None:
-    try:
-        with open('stockList.txt') as f:
-            lines = f.readlines()
-            for line in lines:
-                stock = line.split('\n')[0]
-                if(len(stock) > 0):
-                    stocks.append(stock)
-    except FileNotFoundError:
-       with open('stockList.txt', 'w') as f:
-            None
-
-def retrieve_processed_symbols(processedSymbols: list[str]) -> None:
-    try:
-        with open('processedSymbols.txt') as f:
-                lines = f.readlines()
-                for line in lines:
-                    stock = line.split('\n')[0]
-                    if(len(stock) > 0):
-                        processedSymbols.append(stock)
-    except FileNotFoundError:
-        with open(r'processedSymbols.txt', 'w') as fp:
-            None
-
-def write_to_processed_symbols(symbol: str = None, symbols: list[str] = None) -> None:
-    with lock:
-        with open(r'processedSymbols.txt', 'a') as fp:
-            if (symbol != None):
-                fp.write("%s\n" % symbol)
-            if (symbols != None):
-                for stock in symbols:
-                    fp.write("%s\n" % stock)
-
-def download_historical_data(symbols: list[str]) -> dict:
-        return yf.download(symbols, period="10y")
 
 class generatorThread (threading.Thread):
    def __init__(self, threadID, name, counter, symbols: list[str], h_data: dict):
@@ -80,11 +38,12 @@ class generatorThread (threading.Thread):
    def run(self):
         for symbol in self.symbols:
             try:
-                calculator = Source.ComponentFactory.ComponentFactory.getDataCalculatorObject(symbol, self.h_data)
+                calculator: DC.Data_Calculator = CF.ComponentFactory.getDataCalculatorObject(symbol, self.h_data)
                 checkIsOnSale(symbol, calculator.calculate_sticker_price_data(), stocksOnSale)
             except Exception as e: 
                 print('Thread ' + str(self.threadID) + " could not retrieve data for " + symbol, e)
-            write_to_processed_symbols(symbol = symbol)
+            with lock:
+                helper.write_processed_symbols(symbol = symbol)
 
 if __name__ == "__main__":
 
@@ -94,21 +53,12 @@ if __name__ == "__main__":
 
     startTime = time.time()
 
-    if( len(stocks) == 0 ):
-        retrieve_stock_list(stocks)
-        retrieve_processed_symbols(processedSymbols)
-        stocks = [symbol for symbol in stocks if symbol not in processedSymbols]
-
-    if( len(stocks) == 0 ):
-        raise Exception("All symbols in list have been processed")
-
-    h_data: dict = download_historical_data(stocks)
-    download_failed: list = list(shared._ERRORS.keys())
-    write_to_processed_symbols(symbols = download_failed)
-    stocks = [symbol for symbol in stocks if symbol not in download_failed]
-
-    if( len(stocks) == 0 ):
-        raise Exception("Download failed for all listed unprocessed symbols")
+    try:
+        if( len(stocks) == 0 ):
+            helper.retrieve_stock_list(stocks)
+        h_data, stocks = helper.download_historical_data(stocks)
+    except Exception as e:
+        raise Exception('Error: Could not build stock list - ', e)
         
     if( len(stocks)%MAX_NUMBER_OF_THREADS == 0 ):
         step = int(len(stocks)/MAX_NUMBER_OF_THREADS)
