@@ -3,7 +3,6 @@ import threading
 import yfinance as yf
 import time
 import sys
-import importlib
 import Source.ComponentFactory
 
 MAX_NUMBER_OF_THREADS=10
@@ -76,8 +75,8 @@ class generatorThread (threading.Thread):
       self.h_data = h_data
    def run(self):
         for symbol in self.symbols:
-            calculator = Source.ComponentFactory.ComponentFactory.getDataCalculatorObject(symbol, self.h_data)
             try:
+                calculator = Source.ComponentFactory.ComponentFactory.getDataCalculatorObject(symbol, self.h_data)
                 checkIsOnSale(symbol, calculator.calculate_sticker_price_data(), stocksOnSale)
             except Exception as e: 
                 print("Could not retrieve data for " + symbol, e)
