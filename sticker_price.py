@@ -1,6 +1,7 @@
 import pandas as pd
 import threading
 import yfinance as yf
+import yfinance.shared as shared
 import time
 import sys
 import Source.ComponentFactory
@@ -12,12 +13,11 @@ lock = threading.Lock()
 def checkIsOnSale(symbol: str, priceData: dict, stocksOnSale: list[str]) -> None:
     stock = yf.Ticker(symbol)
     price = stock.history(period='1d')['Close'][0]
-    
     sale_prices = priceData['sale_price']
     if( (sale_prices[0] > 0 and sale_prices[1] > 0 and sale_prices[2] > 0) and (price < sale_prices[0] or price < sale_prices[1] or price < sale_prices[2])):
         print( symbol + " is on sale")
         stocksOnSale.append(symbol)
-        padded = pad_dict_list(priceData, '')
+        pad_dict_list(priceData, '')
         df = pd.DataFrame.from_dict(priceData)
         df.to_csv('Output/' + symbol + '.csv', index=False)
     else:
@@ -57,10 +57,14 @@ def retrieve_processed_symbols(processedSymbols: list[str]) -> None:
         with open(r'processedSymbols.txt', 'w') as fp:
             None
 
-def write_to_processed_symbols(symbol: str) -> None:
+def write_to_processed_symbols(symbol: str = None, symbols: list[str] = None) -> None:
     with lock:
         with open(r'processedSymbols.txt', 'a') as fp:
-            fp.write("%s\n" % symbol)
+            if (symbol != None):
+                fp.write("%s\n" % symbol)
+            if (symbols != None):
+                for stock in symbols:
+                    fp.write("%s\n" % stock)
 
 def download_historical_data(symbols: list[str]) -> dict:
         return yf.download(symbols, period="10y")
@@ -79,8 +83,8 @@ class generatorThread (threading.Thread):
                 calculator = Source.ComponentFactory.ComponentFactory.getDataCalculatorObject(symbol, self.h_data)
                 checkIsOnSale(symbol, calculator.calculate_sticker_price_data(), stocksOnSale)
             except Exception as e: 
-                print("Could not retrieve data for " + symbol, e)
-            write_to_processed_symbols(symbol)
+                print('Thread ' + str(self.threadID) + " could not retrieve data for " + symbol, e)
+            write_to_processed_symbols(symbol = symbol)
 
 if __name__ == "__main__":
 
@@ -99,7 +103,13 @@ if __name__ == "__main__":
         raise Exception("All symbols in list have been processed")
 
     h_data: dict = download_historical_data(stocks)
+    download_failed: list = list(shared._ERRORS.keys())
+    write_to_processed_symbols(symbols = download_failed)
+    stocks = [symbol for symbol in stocks if symbol not in download_failed]
 
+    if( len(stocks) == 0 ):
+        raise Exception("Download failed for all listed unprocessed symbols")
+        
     if( len(stocks)%MAX_NUMBER_OF_THREADS == 0 ):
         step = int(len(stocks)/MAX_NUMBER_OF_THREADS)
     else:

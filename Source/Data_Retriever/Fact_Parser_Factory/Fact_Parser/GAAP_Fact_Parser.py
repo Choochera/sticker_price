@@ -18,7 +18,7 @@ class GAAP_Fact_Parser(IFact_Parser.IFact_Parser):
                 raise Exception("Cannot retrieve shareholder equity data")
 
         qrtly_shareholder_equity = []
-        currencies = list(data['units'].keys())[0]
+        currencies = list(data['units'].keys())
         
         if ('USD' in currencies):
             currency = 'USD'
@@ -85,7 +85,7 @@ class GAAP_Fact_Parser(IFact_Parser.IFact_Parser):
             except KeyError:
                 print('Could not retrieve benchmark ratio price for symbol: ' + self.symbol)
                 return 0
-
+        
         currency = list(data['units'].keys())[0]
         for period in data['units'][currency]:
             try:
@@ -94,8 +94,9 @@ class GAAP_Fact_Parser(IFact_Parser.IFact_Parser):
             except:
                 #Skip values without frame 
                 None
+        
         shares_outstanding = self.retrieve_quarterly_outstanding_shares()
-        shares_outstanding = shares_outstanding['units']['shares'][len(shares_outstanding['units']['shares']) - 1]['val']
+        shares_outstanding = list(shares_outstanding[len(shares_outstanding) - 1].values())[0]
         ttm_revenue = sum(qrtly_revenue[-4:])
 
         # Equation for price based on provided market benchmark = (revenue / shares outstanding) * benchmark price-sales ratio
