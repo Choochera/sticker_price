@@ -1,16 +1,19 @@
 
-import Source.ComponentFactory
+import Source.ComponentFactory as ComponentFactory
 from datetime import datetime, timedelta
 import statistics
 import numpy as np
-import Data_Calculator.IData_Calculator
+import Data_Calculator.IData_Calculator as IData_Calculator
 
-class dataCalculator(Data_Calculator.IData_Calculator.IData_Calculator):
+class dataCalculator(IData_Calculator.IData_Calculator):
 
     def __init__(self, symbol: str, h_data: dict):
         self.symbol = symbol
-        self.retriever = Source.ComponentFactory.ComponentFactory.getDataRetrieverObject(self.symbol)
         self.h_data = h_data
+        try:
+            self.retriever = ComponentFactory.ComponentFactory.getDataRetrieverObject(self.symbol)
+        except Exception as e:
+            raise e
 
     def calculate_quarterly_PE(self) -> list[float]:
         # ttm PE = price at earnings announcement / ttm EPS
@@ -45,9 +48,12 @@ class dataCalculator(Data_Calculator.IData_Calculator.IData_Calculator):
         quarterly_BVPS = []
         try: 
             qrtly_shareholder_equity = self.retriever.retrieve_quarterly_shareholder_equity()
+        except Exception as e:
+            raise Exception("Cannot retrieve quarterly shareholder equity - ", e)
+        try:
             qrtly_outstanding_shares = self.retriever.retrieve_quarterly_outstanding_shares()
         except Exception as e:
-            raise Exception("Cannot retrieve quarterly BVPS - ", e)
+            raise Exception("Cannot retrieve quarterly outstanding shares - ", e)
 
         last_share_value = -1
         for equity in qrtly_shareholder_equity:

@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import lxml.html as lh
 import Helper.IHelper
+import simplejson
 
 class helper(Helper.IHelper.IHelper):
     
@@ -19,16 +20,22 @@ class helper(Helper.IHelper.IHelper):
         response = requests.get(url, headers=headers)
         return response
 
-    def retrieve_facts(self, symbol: str) -> requests.Response:
+    def retrieve_facts(self, symbol: str) -> dict:
         headers = {'User-Agent': "your@email.com"}
         tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
         tickers_cik = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0).values[0])
         tickers_cik["cik_str"] = tickers_cik["cik_str"].astype(str).str.zfill(10)
         cik = tickers_cik[tickers_cik["ticker"] == symbol]['cik_str']
         cik = cik.reset_index(drop = True)
-        url = "https://data.sec.gov/api/xbrl/companyfacts/CIK" + cik[0] + ".json"
+        try:
+            url = "https://data.sec.gov/api/xbrl/companyfacts/CIK" + cik[0] + ".json"
+        except KeyError:
+            raise Exception('Error retrieving cik data')
         response = requests.get(url, headers=headers)
-        return response
+        try:
+            return response.json()
+        except simplejson.errors.JSONDecodeError:
+            raise Exception('Error retrieving facts')
 
     def retrieve_fy_growth_estimate(self, symbol: str) -> float:
         url = "https://www.zacks.com/stock/quote/" + symbol + "/detailed-estimates"
