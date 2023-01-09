@@ -10,6 +10,7 @@ class dataCalculator(IData_Calculator.IData_Calculator):
     def __init__(self, symbol: str, h_data: dict):
         self.symbol = symbol
         self.h_data = h_data
+        self.benchmark_price_sales_ratio = 2.88
         try:
             self.retriever = ComponentFactory.ComponentFactory.getDataRetrieverObject(self.symbol)
         except Exception as e:
@@ -97,7 +98,6 @@ class dataCalculator(IData_Calculator.IData_Calculator):
         # # Calculate the sticker price of the stock today relative to what predicted price will be in the future
         num_years = 5
         percent_return = 15
-        benchmark_price_sales_ratio = 2.88
 
         # # Plug in acquired values into Rule #1 equation
 
@@ -108,11 +108,10 @@ class dataCalculator(IData_Calculator.IData_Calculator):
         return_time_to_double = np.log(2)/np.log(1 + (percent_return/100))
         number_of_equity_doubles = num_years/return_time_to_double
         sticker_price = future_price/( 2 ** number_of_equity_doubles )
-
+        
         result['trailing_years'] = trailing_years
         result['sticker_price'] = sticker_price
         result['sale_price'] = sticker_price/2
-        result['ratio_price'] = self.retriever.retrieve_benchmark_ratio_price(benchmark_price_sales_ratio)
 
         return result
 
@@ -120,7 +119,6 @@ class dataCalculator(IData_Calculator.IData_Calculator):
         priceData['trailing_years'].append(additions['trailing_years'])
         priceData['sticker_price'].append(additions['sticker_price'])
         priceData['sale_price'].append(additions['sale_price'])
-        priceData['ratio_price'].append(additions['ratio_price'])
 
     def calculate_sticker_price_data(self) -> dict:
         priceData = dict()
@@ -186,5 +184,5 @@ class dataCalculator(IData_Calculator.IData_Calculator):
         self.append_price_values(priceData, self.calculate_sticker_price(1, tyy_BVPS_growth, annual_PE, annual_EPS))
         self.append_price_values(priceData, self.calculate_sticker_price(5, tfy_BVPS_growth, annual_PE, annual_EPS))
         self.append_price_values(priceData, self.calculate_sticker_price(10, tty_BVPS_growth, annual_PE, annual_EPS))
-        
+        priceData['ratio_price'].append(self.retriever.retrieve_benchmark_ratio_price(self.benchmark_price_sales_ratio))
         return priceData

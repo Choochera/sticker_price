@@ -87,7 +87,7 @@ class IFRS_Fact_Parser(IFact_Parser.IFact_Parser):
             return 0
 
         shares_outstanding = self.retrieve_quarterly_outstanding_shares()
-        shares_outstanding = shares_outstanding['units']['shares'][len(shares_outstanding['units']['shares']) - 1]['val']
+        shares_outstanding = list(shares_outstanding[len(shares_outstanding) - 1].values())[0]
         ttm_revenue = sum(qrtly_revenue[-4:])
 
         # Equation for price based on provided market benchmark = (revenue / shares outstanding) * benchmark price-sales ratio

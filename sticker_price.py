@@ -12,12 +12,11 @@ lock = threading.Lock()
 def checkIsOnSale(symbol: str, priceData: dict, stocksOnSale: list[str]) -> None:
     stock = yf.Ticker(symbol)
     price = stock.history(period='1d')['Close'][0]
-    
     sale_prices = priceData['sale_price']
     if( (sale_prices[0] > 0 and sale_prices[1] > 0 and sale_prices[2] > 0) and (price < sale_prices[0] or price < sale_prices[1] or price < sale_prices[2])):
         print( symbol + " is on sale")
         stocksOnSale.append(symbol)
-        padded = pad_dict_list(priceData, '')
+        pad_dict_list(priceData, '')
         df = pd.DataFrame.from_dict(priceData)
         df.to_csv('Output/' + symbol + '.csv', index=False)
     else:
