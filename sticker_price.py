@@ -1,6 +1,7 @@
 import pandas as pd
 import threading
 import yfinance as yf
+import yfinance.shared as shared
 import time
 import sys
 import Source.ComponentFactory
@@ -98,6 +99,8 @@ if __name__ == "__main__":
         raise Exception("All symbols in list have been processed")
 
     h_data: dict = download_historical_data(stocks)
+    download_failed = list(shared._ERRORS.keys())
+    stocks = [symbol for symbol in stocks if symbol not in download_failed]
 
     if( len(stocks)%MAX_NUMBER_OF_THREADS == 0 ):
         step = int(len(stocks)/MAX_NUMBER_OF_THREADS)
