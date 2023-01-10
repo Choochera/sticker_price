@@ -9,7 +9,7 @@ import yfinance.shared as shared
 class helper(Helper.IHelper.IHelper):
     
     def __init__(self):
-        None
+        self.processed_symbols: list[str] = []
 
     def send_SEC_api_request(self, symbol: str, element: str) -> requests.Response:
         headers = {'User-Agent': "your@email.com"}
@@ -77,7 +77,8 @@ class helper(Helper.IHelper.IHelper):
                 fp.write("%s\n" % symbol)
             if (symbols != None):
                 for stock in symbols:
-                    fp.write("%s\n" % stock)
+                    if (stock not in self.processed_symbols):
+                        fp.write("%s\n" % stock)
 
     def download_historical_data(self, stocks: list[str]) -> list:
         h_data: dict = yf.download(stocks, period="10y")
@@ -89,10 +90,9 @@ class helper(Helper.IHelper.IHelper):
         return h_data, stocks
 
     def retrieve_stock_list(self, stocks: list[str]) -> None:
-        processedSymbols: list[str] = []
         self.__read_stock_list(stocks)
-        self.__read_processed_symbols(processedSymbols)
-        stocks = [symbol for symbol in stocks if symbol not in processedSymbols]
+        self.__read_processed_symbols(self.processed_symbols)
+        stocks = [symbol for symbol in stocks if symbol not in self.processed_symbols]
         if( len(stocks) == 0 ):
             raise Exception("All symbols in list have been processed")
 
