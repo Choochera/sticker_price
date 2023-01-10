@@ -1,6 +1,6 @@
 import Source.ComponentFactory as CF
 import Data_Retriever.IData_Retriever
-import Data_Retriever.Fact_Parser_Factory.Fact_Parser_Factory as parserFactory
+import Data_Retriever.Fact_Parser_Factory.Fact_Parser_Factory as PF
 
 class dataRetriever(Data_Retriever.IData_Retriever.IData_Retriever):
 
@@ -11,7 +11,7 @@ class dataRetriever(Data_Retriever.IData_Retriever.IData_Retriever):
             self.facts = self.helper.retrieve_facts(symbol)
         except Exception as e:
             raise e
-        self.parser = parserFactory.FactParserFactory.getFactParserObject(self.symbol, self.facts)
+        self.parser = PF.FactParserFactory.getFactParserObject(self.symbol, self.facts)
 
     def retrieve_quarterly_shareholder_equity(self) -> list[dict]:
         return self.parser.retrieve_quarterly_shareholder_equity()

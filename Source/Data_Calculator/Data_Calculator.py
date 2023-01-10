@@ -1,5 +1,5 @@
 
-import Source.ComponentFactory as ComponentFactory
+import Source.ComponentFactory as CF
 from datetime import datetime, timedelta
 import statistics
 import numpy as np
@@ -12,7 +12,7 @@ class dataCalculator(IData_Calculator.IData_Calculator):
         self.h_data = h_data
         self.benchmark_price_sales_ratio = 2.88
         try:
-            self.retriever = ComponentFactory.ComponentFactory.getDataRetrieverObject(self.symbol)
+            self.retriever = CF.ComponentFactory.getDataRetrieverObject(self.symbol)
         except Exception as e:
             raise e
 
