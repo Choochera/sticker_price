@@ -3,6 +3,8 @@ import pandas as pd
 import lxml.html as lh
 import Helper.IHelper
 import simplejson
+import yfinance as yf
+import yfinance.shared as shared
 
 class helper(Helper.IHelper.IHelper):
     
@@ -39,7 +41,6 @@ class helper(Helper.IHelper.IHelper):
 
     def retrieve_fy_growth_estimate(self, symbol: str) -> float:
         url = "https://www.zacks.com/stock/quote/" + symbol + "/detailed-estimates"
-
         try:
             page = requests.get(url, headers = {'User-Agent' : '008'})
             doc = lh.fromstring(page.content)
@@ -59,3 +60,62 @@ class helper(Helper.IHelper.IHelper):
                 return td_elements[i + 1].text_content() 
         
         return -1
+
+    def add_padding_to_collection(self, dict_list: dict, padel: str) -> None:
+        lmax = 0
+        for lname in dict_list.keys():
+            lmax = max(lmax, len(dict_list[lname]))
+        for lname in dict_list.keys():
+            ll = len(dict_list[lname])
+            if  ll < lmax:
+                dict_list[lname] += [padel] * (lmax - ll)
+        return dict_list
+
+    def write_processed_symbols(self, symbol: str = None, symbols: list[str] = None) -> None:
+        with open(r'processedSymbols.txt', 'a') as fp:
+            if (symbol != None):
+                fp.write("%s\n" % symbol)
+            if (symbols != None):
+                for stock in symbols:
+                    fp.write("%s\n" % stock)
+
+    def download_historical_data(self, stocks: list[str]) -> list:
+        h_data: dict = yf.download(stocks, period="10y")
+        download_failed_for: list[str] = list(shared._ERRORS.keys())
+        self.write_processed_symbols(symbols=download_failed_for)
+        stocks = [stock for stock in stocks if stock not in download_failed_for]
+        if( len(stocks) == 0 ):
+            raise Exception("Download failed for all listed unprocessed symbols")
+        return h_data, stocks
+
+    def retrieve_stock_list(self, stocks: list[str]) -> None:
+        processedSymbols: list[str] = []
+        self.__read_stock_list(stocks)
+        self.__read_processed_symbols(processedSymbols)
+        stocks = [symbol for symbol in stocks if symbol not in processedSymbols]
+        if( len(stocks) == 0 ):
+            raise Exception("All symbols in list have been processed")
+
+    def __read_stock_list(self, stocks: list[str]) -> None:
+        try:
+            with open('stockList.txt') as f:
+                lines = f.readlines()
+                for line in lines:
+                    stock = line.split('\n')[0]
+                    if(len(stock) > 0):
+                        stocks.append(stock)
+        except FileNotFoundError:
+            with open('stockList.txt', 'w') as f:
+                    None
+
+    def __read_processed_symbols(self, processedSymbols: list[str]) -> None:
+        try:
+            with open('processedSymbols.txt') as f:
+                    lines = f.readlines()
+                    for line in lines:
+                        stock = line.split('\n')[0]
+                        if(len(stock) > 0):
+                            processedSymbols.append(stock)
+        except FileNotFoundError:
+            with open(r'processedSymbols.txt', 'w') as fp:
+                None        
