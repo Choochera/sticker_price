@@ -1,0 +1,11 @@
+name: PEP-8 Style Check
+run-name: PEP-8 Style Check
+on: [push]
+jobs:
+  CheckStyle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository to runner
+        uses: actions/checkout@v3
+      - name: Python Style Checker
+        uses: andymckay/pycodestyle-action@0.1.3
