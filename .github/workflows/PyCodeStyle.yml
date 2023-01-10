@@ -5,5 +5,8 @@ jobs:
   CheckStyle:
     runs-on: ubuntu-latest
     steps:
+        run: |
+          ls ${{ github.workspace }}
+      - run: echo "🍏 This job's status is ${{ job.status }}."
       - name: Python Style Checker
         uses: andymckay/pycodestyle-action@0.1.3
