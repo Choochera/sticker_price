@@ -5,6 +5,7 @@ import simplejson
 import yfinance as yf
 import yfinance.shared as shared
 import json
+import os
 
 class helper(Helper.IHelper):
     
@@ -114,6 +115,8 @@ class helper(Helper.IHelper):
             raise Exception("Could not retrieve cik for " + symbol)
 
     def __read_cik_map(self) -> dict:
+        if not os.path.exists('Service/Data'):
+            os.makedirs('Service/Data')
         with open('Service/Data/cikMap.json', 'a+') as file:
             try:
                 return json.load(file)
