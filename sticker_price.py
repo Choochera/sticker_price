@@ -26,7 +26,7 @@ if __name__ == "__main__":
         h_data = helper.download_historical_data(stocks)
     except Exception as e:
         raise Exception('Error: Could not build stock list - ', e)
-    
+
     if (len(stocks) % MAX_NUMBER_OF_THREADS == 0):
         step = int(len(stocks)/MAX_NUMBER_OF_THREADS)
     else:
@@ -48,12 +48,10 @@ if __name__ == "__main__":
         threads[int(i)].start()
     for t in threads:
         t.join()
-    del(threads)
+    del (threads)
 
     end = time.time()
-    
-    print("""Sticker Price Analysis Complete\n
-             Elapsed time: %2d minutes, %2d seconds\n"""
-             % ((end - startTime)/60, (end - startTime)%60)
-        )
 
+    print("""Sticker Price Analysis Complete\n
+            Elapsed time: %2d minutes, %2d seconds\n"""
+          % ((end - startTime)/60, (end - startTime) % 60))
