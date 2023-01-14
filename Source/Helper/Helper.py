@@ -1,65 +1,47 @@
 import requests
 import pandas as pd
-import lxml.html as lh
-import Helper.IHelper
+import Source.Helper.IHelper as Helper
 import simplejson
 import yfinance as yf
 import yfinance.shared as shared
+import json
 
-class helper(Helper.IHelper.IHelper):
+class helper(Helper.IHelper):
     
     def __init__(self):
         self.processed_symbols: list[str] = []
+        self.cikMap = self.__read_cik_map()
+        self.symbolMap = {v: k for k, v in self.cikMap.items()}
 
-    def send_SEC_api_request(self, symbol: str, element: str) -> requests.Response:
-        headers = {'User-Agent': "your@email.com"}
-        tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
-        tickers_cik = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0).values[0])
-        tickers_cik["cik_str"] = tickers_cik["cik_str"].astype(str).str.zfill(10)
-        cik = tickers_cik[tickers_cik["ticker"] == symbol]['cik_str']
-        cik = cik.reset_index(drop = True)
-        url = "https://data.sec.gov/api/xbrl/companyconcept/CIK" + cik[0] + "/us-gaap/" + element + ".json"
-        response = requests.get(url, headers=headers)
-        return response
-
+    
     def retrieve_facts(self, symbol: str) -> dict:
         headers = {'User-Agent': "your@email.com"}
-        tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
-        tickers_cik = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0).values[0])
-        tickers_cik["cik_str"] = tickers_cik["cik_str"].astype(str).str.zfill(10)
-        cik = tickers_cik[tickers_cik["ticker"] == symbol]['cik_str']
-        cik = cik.reset_index(drop = True)
-        try:
-            url = "https://data.sec.gov/api/xbrl/companyfacts/CIK" + cik[0] + ".json"
-        except KeyError:
-            raise Exception('Error retrieving cik data')
+        cik = self.__retrieve_cik(symbol, headers)
+        url = "http://127.0.0.1:5000/getFacts/CIK" + cik
         response = requests.get(url, headers=headers)
         try:
             return response.json()
         except simplejson.errors.JSONDecodeError:
             raise Exception('Error retrieving facts')
+            
+    def retrieve_bulk_facts(self, symbols: list[str]) -> dict:
+        facts: dict = dict()
+        url = "http://127.0.0.1:5000/getBulkFacts"
+        cikList = []
+        for symbol in symbols:
+            cik = self.__retrieve_cik(symbol)
+            cikList.append('CIK' + cik)
 
-    def retrieve_fy_growth_estimate(self, symbol: str) -> float:
-        url = "https://www.zacks.com/stock/quote/" + symbol + "/detailed-estimates"
-        try:
-            page = requests.get(url, headers = {'User-Agent' : '008'})
-            doc = lh.fromstring(page.content)
-        except requests.exceptions.HTTPError as hError:
-            raise Exception(str("Http Error:", hError))
-        except requests.exceptions.ConnectionError as cError:
-            raise Exception(str("Error Connecting:", cError))
-        except requests.exceptions.Timeout as tError:
-            raise Exception(str("Timeout Error:", tError))
-        except requests.exceptions.RequestException as rError:
-            raise Exception(str("Other Error:", rError))
+        body = {'cikList': cikList}
+        response = requests.post(url, json=body)
+        for symbolFacts in response.json():
+            symbolFacts = symbolFacts[0]
+            key = str(symbolFacts['cik'])
+            while len(key) != 10:
+                key = '0' + key
+            facts[self.symbolMap[key]] = symbolFacts
 
-        td_elements = doc.xpath('//td')
-
-        for i in range(len(td_elements)):
-            if(td_elements[i].text_content() == 'Next 5 Years'):
-                return td_elements[i + 1].text_content() 
-        
-        return -1
+        return facts
 
     def add_padding_to_collection(self, dict_list: dict, padel: str) -> None:
         lmax = 0
@@ -81,7 +63,7 @@ class helper(Helper.IHelper.IHelper):
                         fp.write("%s\n" % stock)
 
     def download_historical_data(self, stocks: list[str]) -> list:
-        h_data: dict = yf.download(stocks, period="10y")
+        h_data: dict = yf.download(stocks, period="15y")
         download_failed_for: list[str] = list(shared._ERRORS.keys())
         self.write_processed_symbols(symbols=download_failed_for)
         stocks = [stock for stock in stocks if stock not in download_failed_for]
@@ -118,4 +100,37 @@ class helper(Helper.IHelper.IHelper):
                             processedSymbols.append(stock)
         except FileNotFoundError:
             with open(r'processedSymbols.txt', 'w') as fp:
-                None        
+                None
+    
+    def __retrieve_cik_from_sec(self, symbol: str, headers) -> str:
+        tickers_cik = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
+        tickers_cik = pd.json_normalize(pd.json_normalize(tickers_cik.json(), max_level=0).values[0])
+        tickers_cik["cik_str"] = tickers_cik["cik_str"].astype(str).str.zfill(10)
+        cik = tickers_cik[tickers_cik["ticker"] == symbol]['cik_str']
+        cik = cik.reset_index(drop = True)
+        try:
+            return cik[0]
+        except KeyError:
+            raise Exception("Could not retrieve cik for " + symbol)
+
+    def __read_cik_map(self) -> dict:
+        with open('Service/Data/cikMap.json', 'a+') as file:
+            try:
+                return json.load(file)
+            except json.decoder.JSONDecodeError:
+                return dict()
+
+    def __append_to_cik_map(self, symbol: str) -> str:
+        headers = {'User-Agent': "your@email.com"}
+        cik: str = self.__retrieve_cik_from_sec(symbol, headers)
+        self.cikMap[symbol] = cik
+        self.symbolMap[cik] = symbol
+        with open('Service/Data/cikMap.json', 'w+') as file:
+            json.dump(self.cikMap, file) 
+        return cik
+
+    def __retrieve_cik(self, symbol: str) -> str:
+        try:
+            return self.cikMap[symbol]
+        except KeyError:
+            return self.__append_to_cik_map(symbol)
