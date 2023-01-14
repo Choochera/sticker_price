@@ -7,15 +7,14 @@ class IHelper(ABC):
         None
 
     @abstractmethod
-    def send_SEC_api_request(self, symbol: str, element: str) -> requests.Request:
+    def retrieve_facts(self, symbol: str) -> dict:
         pass
-
     @abstractmethod
-    def retrieve_facts(self, symbol: str) -> requests.Response:
+    def retrieve_bulk_facts(self, symbol: str) -> requests.Response:
         pass
-
+    
     @abstractmethod
-    def retrieve_fy_growth_estimate(self, symbol: str) -> float:
+    def retrieve_stock_list(self, stocks: list[str]) -> None:
         pass
 
     @abstractmethod

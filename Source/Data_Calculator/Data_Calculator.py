@@ -3,16 +3,21 @@ import Source.ComponentFactory as CF
 from datetime import datetime, timedelta
 import statistics
 import numpy as np
-import Data_Calculator.IData_Calculator as IData_Calculator
+import Source.Data_Calculator.IData_Calculator as IDC
 
-class dataCalculator(IData_Calculator.IData_Calculator):
 
-    def __init__(self, symbol: str, h_data: dict):
+class dataCalculator(IDC.IData_Calculator):
+
+    def __init__(self, symbol: str, h_data: dict, facts: dict):
         self.symbol = symbol
         self.h_data = h_data
         self.benchmark_price_sales_ratio = 2.88
+        self.facts = facts
         try:
-            self.retriever = CF.ComponentFactory.getDataRetrieverObject(self.symbol)
+            self.retriever = CF.ComponentFactory.getDataRetrieverObject(
+                self.symbol,
+                self.facts
+            )
         except Exception as e:
             raise e
 
@@ -32,7 +37,7 @@ class dataCalculator(IData_Calculator.IData_Calculator):
             price = 0
             while price == 0:
                 try:
-                    price = float(self.h_data.loc[date]['Adj Close'][self.symbol])
+                    price = float(self.h_data[0].loc[date]['Adj Close'][self.symbol])
                 except KeyError:
                     date = datetime.strptime(date, '%Y-%m-%d').date()
                     date = date + timedelta(days= 1)

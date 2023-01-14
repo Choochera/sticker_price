@@ -1,7 +1,7 @@
 from forex_python.converter import CurrencyRates
-import Data_Retriever.Fact_Parser_Factory.Fact_Parser.IFact_Parser as IFact_Parser
+import Source.Data_Retriever.Fact_Parser_Factory.Fact_Parser.IFact_Parser as IFP
 
-class GAAP_Fact_Parser(IFact_Parser.IFact_Parser):
+class GAAP_Fact_Parser(IFP.IFact_Parser):
 
     def __init__(self, symbol: str, facts: dict):
         self.symbol = symbol
