@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import requests
 
+
 class IHelper(ABC):
 
     def __init__(self):
@@ -9,10 +10,11 @@ class IHelper(ABC):
     @abstractmethod
     def retrieve_facts(self, symbol: str) -> dict:
         pass
+
     @abstractmethod
     def retrieve_bulk_facts(self, symbol: str) -> requests.Response:
         pass
-    
+
     @abstractmethod
     def retrieve_stock_list(self, stocks: list[str]) -> None:
         pass

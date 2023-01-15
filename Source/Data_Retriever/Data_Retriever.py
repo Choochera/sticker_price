@@ -1,8 +1,10 @@
 import Source.ComponentFactory as CF
 import Source.Data_Retriever.IData_Retriever as IDR
-import Source.Data_Retriever.Fact_Parser_Factory.Fact_Parser_Factory as PF
 import requests
 import lxml.html as lh
+import Source.constants as const
+import Source.Exceptions.DataRetrievalException as DRE
+
 
 class dataRetriever(IDR.IData_Retriever):
 
@@ -10,7 +12,10 @@ class dataRetriever(IDR.IData_Retriever):
         self.symbol = symbol
         self.helper = CF.ComponentFactory.getHelperObject()
         self.facts = facts
-        self.parser = PF.FactParserFactory.getFactParserObject(self.symbol, self.facts)
+        self.parser = CF.ComponentFactory.getFactParserObject(
+            self.symbol,
+            self.facts
+        )
 
     def retrieve_quarterly_shareholder_equity(self) -> list[dict]:
         return self.parser.retrieve_quarterly_shareholder_equity()
@@ -22,25 +27,36 @@ class dataRetriever(IDR.IData_Retriever):
         return self.parser.retrieve_quarterly_EPS()
 
     def retrieve_fy_growth_estimate(self) -> float:
-        url = "https://www.zacks.com/stock/quote/" + self.symbol + "/detailed-estimates"
+        url = const.ZACKS_URL % self.symbol
         try:
-            page = requests.get(url, headers = {'User-Agent' : '008'})
+            page = requests.get(
+                url,
+                headers={'User-Agent': const.USER_AGENT}
+            )
             doc = lh.fromstring(page.content)
         except requests.exceptions.HTTPError as hError:
-            raise Exception(str("Http Error:", hError))
+            raise DRE.DataRetrievalException(
+                const.HTTP
+            )
         except requests.exceptions.ConnectionError as cError:
-            raise Exception(str("Error Connecting:", cError))
+            raise DRE.DataRetrievalException(
+                const.CONNECTING
+            )
         except requests.exceptions.Timeout as tError:
-            raise Exception(str("Timeout Error:", tError))
+            raise DRE.DataRetrievalException(
+                const.TIMEOUT
+            )
         except requests.exceptions.RequestException as rError:
-            raise Exception(str("Other Error:", rError))
+            raise DRE.DataRetrievalException(
+                const.REQUEST
+            )
 
-        td_elements = doc.xpath('//td')
+        td_elements = doc.xpath(const.TABLE_DATA)
 
         for i in range(len(td_elements)):
-            if(td_elements[i].text_content() == 'Next 5 Years'):
-                return td_elements[i + 1].text_content() 
-        
+            if (td_elements[i].text_content() == const.NEXT_FIVE_YEARS):
+                return td_elements[i + 1].text_content()
+
         return -1
 
     def retrieve_benchmark_ratio_price(self, benchmark: float) -> float:

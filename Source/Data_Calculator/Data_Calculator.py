@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import statistics
 import numpy as np
 import Source.Data_Calculator.IData_Calculator as IDC
-import constants as const
+import Source.constants as const
 
 
 class dataCalculator(IDC.IData_Calculator):
@@ -171,7 +171,7 @@ class dataCalculator(IDC.IData_Calculator):
                 annual_BVPS[len(annual_BVPS) - 1]
             ) ** (1/len(annual_BVPS)) - 1) * 100
         except IndexError:
-            raise IDE.InsufficientDataException(self.symbol, const.H_DATA)
+            raise IDE.InsufficientDataException(const.H_DATA)
 
         # Calculate annual PE
         annual_PE = []
@@ -179,7 +179,7 @@ class dataCalculator(IDC.IData_Calculator):
         priceData[const.QRTLY_PE] = quarterly_PE
 
         if (len(quarterly_PE) < 4):
-            raise IDE.InsufficientDataException(self.symbol, const.QRTLY_PE)
+            raise IDE.InsufficientDataException(const.QRTLY_PE)
 
         i = len(quarterly_PE) - 4
         while i > 0 and i > len(quarterly_PE) - 44:
@@ -222,19 +222,17 @@ class dataCalculator(IDC.IData_Calculator):
             )
         return priceData
 
-    def retrieve_qrtly_BVPS_variables(self) -> tuple(list[dict], list[dict]):
+    def retrieve_qrtly_BVPS_variables(self) -> tuple[list[dict], list[dict]]:
         try:
             a = self.retriever.retrieve_quarterly_shareholder_equity()
         except Exception as e:
             raise DRE.DataRetrievalException(
-                self.symbol,
                 const.EQUITY
             )
         try:
             b = self.retriever.retrieve_quarterly_outstanding_shares()
         except Exception as e:
             raise DRE.DataRetrievalException(
-                self.symbol,
                 const.OUTSTANDING_SHARES
             )
         return a, b

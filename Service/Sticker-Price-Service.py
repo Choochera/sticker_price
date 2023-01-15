@@ -20,8 +20,8 @@ def get_db_connection():
     conn = psycopg2.connect(
         host=const.HOST,
         database=const.DATABASE_NAME,
-        user='postgres',
-        password='password')
+        user=creds[0],
+        password=creds[1])
     return conn
 
 

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class IFact_Parser(ABC):
 
     def __init__(self):
