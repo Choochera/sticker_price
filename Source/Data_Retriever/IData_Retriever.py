@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class IData_Retriever(ABC):
 
     def __init__(self):
