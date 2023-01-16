@@ -5,7 +5,7 @@ import Source.Helper.Helper as Helper
 import sys
 
 
-MAX_NUMBER_OF_THREADS: int = 16
+MAX_NUMBER_OF_THREADS: int = 10
 helper: Helper.helper = CF.ComponentFactory.getHelperObject()
 
 if __name__ == "__main__":
