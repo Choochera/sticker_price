@@ -38,7 +38,7 @@ class ComponentFactory():
         return DC.dataCalculator(
             symbol,
             h_data,
-            facts[symbol]
+            facts
         )
 
     def getPriceCheckWorker(
@@ -47,7 +47,8 @@ class ComponentFactory():
             counter,
             symbols: list[str],
             h_data: dict,
-            facts: dict
+            helper: IHelper.IHelper,
+            facts: dict = None,
             ) -> IPCW.IPrice_Check_Worker:
         return PCW.priceCheckWorker(
             threadID,
@@ -55,7 +56,8 @@ class ComponentFactory():
             counter,
             symbols,
             h_data,
-            facts
+            facts,
+            helper
         )
 
     def getFactParserObject(

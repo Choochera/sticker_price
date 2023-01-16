@@ -5,6 +5,11 @@ HOST = 'localhost'
 DATABASE_NAME = 'postgres'
 USER_AGENT_VALUE = 'XYZ/3.0'
 DATA_DIRECTORY = 'Data'
+CIK_LIST = 'cikList'
+DEFAULT_DB_USERNAME = 'postgres'
+DEFAULT_DB_PASSWORD = 'password'
+DEFAULT_DB_NAME = 'postgres'
+POST = 'POST'
 
 # Queries
 GET_PROCESSED_CIK_QUERY = 'SELECT cik from facts'

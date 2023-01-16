@@ -3,14 +3,9 @@ import sys
 import Source.ComponentFactory as CF
 import Source.Helper.Helper as Helper
 import sys
-import os
 
 
-sys.path.extend([
-    f'./{name}' for name in os.listdir(".") if os.path.isdir(name)
-])
-
-MAX_NUMBER_OF_THREADS: int = 10
+MAX_NUMBER_OF_THREADS: int = 16
 helper: Helper.helper = CF.ComponentFactory.getHelperObject()
 
 if __name__ == "__main__":
@@ -23,7 +18,7 @@ if __name__ == "__main__":
     try:
         if (len(stocks) == 0):
             helper.retrieve_stock_list(stocks)
-        h_data = helper.download_historical_data(stocks)
+        h_data, stocks = helper.download_historical_data(stocks)
     except Exception as e:
         raise Exception('Error: Could not build stock list - ', e)
 
@@ -43,7 +38,7 @@ if __name__ == "__main__":
             i+1,
             symbols=stock_groups[i],
             h_data=h_data,
-            facts=helper.retrieve_bulk_facts(stock_groups[i])
+            helper=helper
         ))
         threads[int(i)].start()
     for t in threads:

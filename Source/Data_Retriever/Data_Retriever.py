@@ -10,7 +10,6 @@ class dataRetriever(IDR.IData_Retriever):
 
     def __init__(self, symbol: str, facts: dict):
         self.symbol = symbol
-        self.helper = CF.ComponentFactory.getHelperObject()
         self.facts = facts
         self.parser = CF.ComponentFactory.getFactParserObject(
             self.symbol,
