@@ -2,10 +2,10 @@ import Source.Data_Calculator.Data_Calculator as DC
 import pandas as pd
 import threading
 import yfinance as yf
-import Source.Helper.Helper as Helper
 import Source.ComponentFactory as CF
 import Source.Price_Check_Worker.IPrice_Check_Worker as IPCW
 import Source.constants as const
+import os
 lock: threading.Lock = threading.Lock()
 
 
@@ -65,6 +65,8 @@ class priceCheckWorker (threading.Thread, IPCW.IPrice_Check_Worker):
             print(const.ON_SALE % symbol)
             self.helper.add_padding_to_collection(priceData, const.EMPTY)
             df = pd.DataFrame.from_dict(priceData)
+            if not os.path.exists(const.OUTPUT_PATH):
+                os.makedirs(const.OUTPUT_PATH)
             df.to_csv(const.OUTPUT_CSV_PATH % symbol, index=False)
         else:
             print(const.NOT_ON_SALE % symbol)
