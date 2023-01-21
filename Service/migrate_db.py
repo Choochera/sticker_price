@@ -37,7 +37,7 @@ def __get_bulk_processed_cik(connection, cursor) -> list[str]:
 
 def __download_data() -> None:
     req = Request(
-        url=const.FACTS_ZIP_DOWNLOAD_URL,
+        url=const.EDGAR_URL + const.DATA_ZIP_PATH,
         headers={'User-Agent': const.USER_AGENT_VALUE}
     )
     with urlopen(req) as zipresp:
