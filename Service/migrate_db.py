@@ -64,8 +64,8 @@ if __name__ == '__main__':
         for i in range(len(files)):
             cikIndex = files[i].find('CIK')
             files[i] = '%s\\%s\\%s' % (files[i][:cikIndex],
-                                    const.DATA_DIRECTORY,
-                                    files[i][cikIndex:])
+                                       const.DATA_DIRECTORY,
+                                       files[i][cikIndex:])
             cik = files[i][-18:].replace('.json', '')
             cikTuple = (cik,)
             if (cikTuple not in cikTupleList):
@@ -79,7 +79,10 @@ if __name__ == '__main__':
                 text = json.dumps(data)
                 text = text.replace('\'', '')
                 try:
-                    cursor.execute(const.INSERT_DATA_QUERY % (cikList[i], text))
+                    cursor.execute(const.INSERT_DATA_QUERY % (
+                        cikList[i],
+                        text
+                    ))
                 except psycopg2.errors.UniqueViolation:
                     pass
         connection.commit()
