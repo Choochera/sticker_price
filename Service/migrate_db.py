@@ -49,8 +49,6 @@ if __name__ == '__main__':
 
     startTime = time.time()
 
-    __download_data()
-
     connection = __get_db_connection()
     cursor = connection.cursor()
 
@@ -59,38 +57,38 @@ if __name__ == '__main__':
     files = [
         os.path.abspath(file) for file in os.listdir(const.DATA_DIRECTORY)
     ]
-    if (len(files) > 3):
+    if (len(files) < 3):
         __download_data()
-    cikList = []
-    filesToProcess = []
-    for i in range(len(files)):
-        cikIndex = files[i].find('CIK')
-        files[i] = '%s\\%s\\%s' % (files[i][:cikIndex],
-                                   const.DATA_DIRECTORY,
-                                   files[i][cikIndex:])
-        cik = files[i][-18:].replace('.json', '')
-        cikTuple = (cik,)
-        if (cikTuple not in cikTupleList):
-            cikList.append(cik)
-            filesToProcess.append(files[i])
+        cikList = []
+        filesToProcess = []
+        for i in range(len(files)):
+            cikIndex = files[i].find('CIK')
+            files[i] = '%s\\%s\\%s' % (files[i][:cikIndex],
+                                    const.DATA_DIRECTORY,
+                                    files[i][cikIndex:])
+            cik = files[i][-18:].replace('.json', '')
+            cikTuple = (cik,)
+            if (cikTuple not in cikTupleList):
+                cikList.append(cik)
+                filesToProcess.append(files[i])
 
-    for i in range(len(filesToProcess)):
-        print(filesToProcess[i])
-        with open(filesToProcess[i]) as file:
-            data = json.load(file)
-            text = json.dumps(data)
-            text = text.replace('\'', '')
-            try:
-                cursor.execute(const.INSERT_DATA_QUERY % (cikList[i], text))
-            except psycopg2.errors.UniqueViolation:
-                pass
-    connection.commit()
+        for i in range(len(filesToProcess)):
+            print(filesToProcess[i])
+            with open(filesToProcess[i]) as file:
+                data = json.load(file)
+                text = json.dumps(data)
+                text = text.replace('\'', '')
+                try:
+                    cursor.execute(const.INSERT_DATA_QUERY % (cikList[i], text))
+                except psycopg2.errors.UniqueViolation:
+                    pass
+        connection.commit()
 
     cursor.close()
     connection.close()
 
     end = time.time()
 
-    print("""Sticker Price Analysis Complete\n
+    print("""Sticker Price Database Population Complete\n
             Elapsed time: %2d minutes, %2d seconds\n"""
           % ((end - startTime)/60, (end - startTime) % 60))
