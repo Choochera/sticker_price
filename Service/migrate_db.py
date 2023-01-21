@@ -22,12 +22,13 @@ def __get_db_connection():
     conn = psycopg2.connect(
         host=const.HOST,
         database=const.DATABASE_NAME,
-        user='postgres',
-        password='password')
+        user=creds[0][0],
+        password=creds[1])
     return conn
 
 
 def __get_bulk_processed_cik(connection, cursor) -> list[str]:
+    cursor.execute(const.CREATE_FACTS_TABLE_QUERY)
     cursor.execute(const.GET_PROCESSED_CIK_QUERY)
     cikList = cursor.fetchall()
     connection.commit()
@@ -79,7 +80,6 @@ if __name__ == '__main__':
             data = json.load(file)
             text = json.dumps(data)
             text = text.replace('\'', '')
-            cursor.execute(const.CREATE_FACTS_TABLE_QUERY)
             try:
                 cursor.execute(const.INSERT_DATA_QUERY % (cikList[i], text))
             except psycopg2.errors.UniqueViolation:
