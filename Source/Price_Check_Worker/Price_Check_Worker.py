@@ -50,7 +50,7 @@ class priceCheckWorker (threading.Thread, IPCW.IPrice_Check_Worker):
                     symbol
                 )))
         await asyncio.wait(tasks)
-        
+
     async def checkIsOnSale(
             self,
             symbol: str) -> None:

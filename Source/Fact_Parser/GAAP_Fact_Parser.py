@@ -4,6 +4,7 @@ import Source.constants as const
 import Source.Exceptions.DataRetrievalException as DRE
 import json
 
+
 class GAAP_Fact_Parser(IFP.IFact_Parser):
 
     def __init__(self, symbol: str, facts: dict):
@@ -18,7 +19,10 @@ class GAAP_Fact_Parser(IFP.IFact_Parser):
             try:
                 data = self.facts[const.GAAP][const.L_AND_H_EQUITY]
             except KeyError:
-                with open('Errors/DRE_EQUITY_%s.json' % self.symbol, const.WRITE) as file:
+                with open(
+                    'Errors/DRE_EQUITY_%s.json' % self.symbol,
+                    const.WRITE
+                ) as file:
                     json.dump(self.facts, file)
                 raise DRE.DataRetrievalException(
                     const.EQUITY
@@ -51,7 +55,10 @@ class GAAP_Fact_Parser(IFP.IFact_Parser):
                 try:
                     data = self.facts[const.DEI][const.E_COMMON_OUTSTANDING]
                 except KeyError:
-                    with open('Errors/DRE_OUTSTANDING_SHARES_%s.json' % self.symbol, const.WRITE) as file:
+                    with open(
+                        'Errors/DRE_OUTSTANDING_SHARES_%s.json' % self.symbol,
+                        const.WRITE
+                    ) as file:
                         json.dump(self.facts, file)
                     raise DRE.DataRetrievalException(
                         const.OUTSTANDING_SHARES
@@ -70,8 +77,11 @@ class GAAP_Fact_Parser(IFP.IFact_Parser):
         try:
             data = self.facts[const.GAAP][const.EPS_BASIC]
         except KeyError:
-            with open('Errors/DRE_EPS_%s.json' % self.symbol, const.WRITE) as file:
-                    json.dump(self.facts, file)
+            with open(
+                'Errors/DRE_EPS_%s.json' % self.symbol,
+                const.WRITE
+            ) as file:
+                json.dump(self.facts, file)
             raise DRE.DataRetrievalException(
                 const.EPS
             )

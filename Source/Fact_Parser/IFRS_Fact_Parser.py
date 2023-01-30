@@ -4,6 +4,7 @@ import Source.constants as const
 import Source.Exceptions.DataRetrievalException as DRE
 import json
 
+
 class IFRS_Fact_Parser(IFP.IFact_Parser):
 
     def __init__(self, symbol: str, facts: dict):
@@ -15,8 +16,11 @@ class IFRS_Fact_Parser(IFP.IFact_Parser):
         try:
             data = self.facts[const.IFRS][const.UPPER_EQUITY]
         except KeyError:
-            with open('Errors/DRE_EQUITY_%s.json' % self.symbol, const.WRITE) as file:
-                    json.dump(self.facts, file)
+            with open(
+                'Errors/DRE_EQUITY_%s.json' % self.symbol,
+                const.WRITE
+            ) as file:
+                json.dump(self.facts, file)
             raise DRE.DataRetrievalException(const.EQUITY)
         currency = list(data[const.UNITS].keys())[0]
         qrtly_shareholder_equity = []
@@ -34,8 +38,11 @@ class IFRS_Fact_Parser(IFP.IFact_Parser):
         try:
             data = self.facts[const.IFRS][const.NUMBER_OUTSTANDING]
         except KeyError:
-            with open('Errors/DRE_OUTSTANDING_SHARES_%s.json' % self.symbol, const.WRITE) as file:
-                    json.dump(self.facts, file)
+            with open(
+                'Errors/DRE_OUTSTANDING_SHARES_%s.json' % self.symbol,
+                const.WRITE
+            ) as file:
+                json.dump(self.facts, file)
             raise DRE.DataRetrievalException(
                 const.OUTSTANDING_SHARES
             )
@@ -55,7 +62,10 @@ class IFRS_Fact_Parser(IFP.IFact_Parser):
             try:
                 data = self.facts[const.IFRS][const.B_D_E_L_PER_SHARE]
             except KeyError:
-                with open('Errors/DRE_EPS_%s.json' % self.symbol, const.WRITE) as file:
+                with open(
+                    'Errors/DRE_EPS_%s.json' % self.symbol,
+                    const.WRITE
+                ) as file:
                     json.dump(self.facts, file)
                 raise DRE.DataRetrievalException(const.EPS)
         key = list(data[const.UNITS].keys())[0]
