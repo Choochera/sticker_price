@@ -21,7 +21,10 @@ class helper(Helper.IHelper):
 
     def retrieve_facts(self, symbol: str) -> dict:
         headers = {'User-Agent': const.HELPER_USER_AGENT}
-        cik = self.__retrieve_cik(symbol)
+        try:
+            cik = self.__retrieve_cik(symbol)
+        except DRE.DataRetrievalException:
+            raise DRE.DataRetrievalException(const.LOWER_CIK)
         url = const.SERVICE_GET_FACTS_URL % cik
         response = requests.get(url, headers=headers)
         try:

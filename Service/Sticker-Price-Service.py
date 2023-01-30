@@ -21,7 +21,7 @@ def get_db_connection():
     conn = psycopg2.connect(
         host=const.HOST,
         database=const.DATABASE_NAME,
-        user=creds[0],
+        user=creds[0][0],
         password=creds[1])
     return conn
 

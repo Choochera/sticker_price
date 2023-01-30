@@ -23,5 +23,5 @@ GET_DATA_QUERY = "SELECT data FROM facts where cik = '%s'"
 APPEND_CIK_QUERY = " or cik = '%s'"
 
 # Urls
-FACTS_ZIP_DOWNLOAD_URL = """https://www.sec.gov/Archives
-                            /edgar/daily-index/xbrl/companyfacts.zip"""
+EDGAR_URL = "https://www.sec.gov/Archives/edgar"
+DATA_ZIP_PATH = "/daily-index/xbrl/companyfacts.zip"
