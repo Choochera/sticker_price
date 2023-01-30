@@ -11,7 +11,8 @@ def get_db_auth() -> list[str]:
         db_username: str = os.environ[const.DB_USERNAME_KEY],
         db_password: str = os.environ[const.DB_PASSWORD_KEY]
     except KeyError:
-        raise Exception("Database credentials not provided")
+        return [const.DEFAULT_DB_USERNAME,
+                const.DEFAULT_DB_PASSWORD]
     return [db_username, db_password]
 
 
@@ -27,21 +28,19 @@ def get_db_connection():
 
 @app.route('/getFacts/<cik>')
 def getFacts(cik: str):
-    connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute(const.GET_DATA_QUERY % cik)
     facts = cursor.fetchall()
     cursor.close()
-    connection.close()
     return jsonify(facts)
 
 
-@app.route('/getBulkFacts', methods=['POST'])
+@app.route('/getBulkFacts', methods=[const.POST])
 def getBulkFacts():
     connection = get_db_connection()
     cursor = connection.cursor()
-    if (request.method == 'POST'):
-        cikList: list[str] = request.json['cikList']
+    if (request.method == const.POST):
+        cikList: list[str] = request.json[const.CIK_LIST]
         query_string: str = const.GET_DATA_QUERY % cikList[0]
         i = 1
         while i in range(len(cikList)):
@@ -55,4 +54,6 @@ def getBulkFacts():
 
 
 if __name__ == '__main__':
+    connection = get_db_connection()
     app.run(threaded=True)
+    connection.close()

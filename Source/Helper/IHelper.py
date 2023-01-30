@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-import requests
+import asyncio
 
 
 class IHelper(ABC):
@@ -12,7 +12,10 @@ class IHelper(ABC):
         pass
 
     @abstractmethod
-    def retrieve_bulk_facts(self, symbol: str) -> requests.Response:
+    async def retrieve_bulk_facts(
+            self,
+            symbols: list[str],
+            loop: asyncio.AbstractEventLoop) -> dict:
         pass
 
     @abstractmethod
@@ -25,8 +28,4 @@ class IHelper(ABC):
 
     @abstractmethod
     def write_processed_symbols(symbol: str, symbols: list[str]) -> None:
-        pass
-
-    @abstractmethod
-    def download_historical_data(symbols: list[str]) -> list:
         pass

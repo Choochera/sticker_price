@@ -41,14 +41,16 @@ class dataCalculator(IDC.IData_Calculator):
 
             date = str(date)
             price = 0
-            while price == 0:
+            attempts = 0
+            while price == 0 and attempts < 7:
                 try:
-                    dataForDate = self.h_data[0].loc[date]
+                    dataForDate = self.h_data.loc[date]
                     price = float(dataForDate[const.ADJ_CLOSE][self.symbol])
                 except KeyError:
                     date = datetime.strptime(date, '%Y-%m-%d').date()
                     date = date + timedelta(days=1)
                     date = str(date)
+                    attempts += 1
 
             eps = float(list(quarterly_EPS[i].values())[0])
             try:

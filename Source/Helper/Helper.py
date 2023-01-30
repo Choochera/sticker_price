@@ -9,6 +9,7 @@ import os
 import Source.constants as const
 import Source.Exceptions.DataRetrievalException as DRE
 import Source.Exceptions.DisqualifyingDataException as DDE
+import asyncio
 
 
 class helper(Helper.IHelper):
@@ -20,32 +21,16 @@ class helper(Helper.IHelper):
 
     def retrieve_facts(self, symbol: str) -> dict:
         headers = {'User-Agent': const.HELPER_USER_AGENT}
-        cik = self.__retrieve_cik(symbol, headers)
+        try:
+            cik = self.__retrieve_cik(symbol)
+        except DRE.DataRetrievalException:
+            raise DRE.DataRetrievalException(const.LOWER_CIK)
         url = const.SERVICE_GET_FACTS_URL % cik
         response = requests.get(url, headers=headers)
         try:
-            return response.json()
+            return response.json()[0][0]
         except simplejson.errors.JSONDecodeError:
             raise DRE.DataRetrievalException(const.FACTS)
-
-    def retrieve_bulk_facts(self, symbols: list[str]) -> dict:
-        facts: dict = dict()
-        url = const.SERVICE_GET_BULK_FACTS_URL
-        cikList = []
-        for symbol in symbols:
-            cik = self.__retrieve_cik(symbol)
-            cikList.append(const.UPPER_CIK + cik)
-
-        body = {const.CIK_LIST: cikList}
-        response = requests.post(url, json=body)
-        for symbolFacts in response.json():
-            symbolFacts = symbolFacts[0]
-            key = str(symbolFacts[const.LOWER_CIK])
-            while len(key) != 10:
-                key = const.ZERO + key
-            facts[self.symbolMap[key]] = symbolFacts
-
-        return facts
 
     def add_padding_to_collection(self, dict_list: dict, padel: str) -> None:
         lmax = 0
@@ -69,15 +54,6 @@ class helper(Helper.IHelper):
                     if (stock not in self.processed_symbols):
                         fp.write(const.SYMBOL_LINE % stock)
 
-    def download_historical_data(self, stocks: list[str]) -> list:
-        h_data: dict = yf.download(stocks, period="15y")
-        download_failed: list[str] = list(shared._ERRORS.keys())
-        self.write_processed_symbols(symbols=download_failed)
-        stocks = [stock for stock in stocks if stock not in download_failed]
-        if (len(stocks) == 0):
-            raise DRE.DataRetrievalException(const.H_DATA)
-        return h_data, stocks
-
     def retrieve_stock_list(self, stocks: list[str]) -> None:
         self.__read_stock_list(stocks)
         self.__read_processed_symbols(self.processed_symbols)
@@ -86,6 +62,52 @@ class helper(Helper.IHelper):
             ]
         if (len(stocks) == 0):
             raise DDE.DisqualifyingDataException(type=const.ALL_PROCESSED)
+
+    def download_historical_data(
+            self,
+            stocks: list[str]) -> tuple[dict, list[str]]:
+        h_data: dict = yf.download(stocks, period="15y")
+        download_failed: list[str] = list(shared._ERRORS.keys())
+        self.write_processed_symbols(symbols=download_failed)
+        stocks = [stock for stock in stocks if stock not in download_failed]
+        if (len(stocks) == 0):
+            raise DRE.DataRetrievalException(const.H_DATA)
+        return h_data, stocks
+
+    async def retrieve_bulk_facts(
+            self,
+            symbols: list[str],
+            loop: asyncio.AbstractEventLoop) -> dict:
+        facts: dict = dict()
+        tasks = []
+        for i in range(0, len(symbols), 5):
+            stocks = symbols[i:i+10]
+            tasks.append(loop.create_task(
+                self.__call_service_for_facts(stocks, facts))
+                )
+        await asyncio.wait(tasks)
+        return facts
+
+    async def __call_service_for_facts(
+            self,
+            stocks: list[str],
+            facts: dict) -> None:
+        cikList = []
+        url = const.SERVICE_GET_BULK_FACTS_URL
+        for symbol in stocks:
+            try:
+                cik = self.__retrieve_cik(symbol)
+                cikList.append(const.UPPER_CIK + cik)
+            except DRE.DataRetrievalException:
+                pass
+        body = {const.CIK_LIST: cikList}
+        response = requests.post(url, json=body)
+        for symbolFacts in response.json():
+            symbolFacts = symbolFacts[0]
+            key = str(symbolFacts[const.LOWER_CIK])
+            while len(key) != 10:
+                key = const.ZERO + key
+            facts[self.symbolMap[key]] = symbolFacts
 
     def __read_stock_list(self, stocks: list[str]) -> None:
         try:
