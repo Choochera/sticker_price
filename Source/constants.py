@@ -57,6 +57,8 @@ NUMBER_OUTSTANDING = 'NumberOfSharesOutstanding'
 E_L_PER_SHARE = 'BasicEarningsLossPerShare'
 B_D_E_L_PER_SHARE = 'BasicAndDilutedEarningsLossPerShare'
 REVENUE = 'Revenue'
+START = 'start'
+END = 'end'
 
 # Helper
 HELPER_USER_AGENT = 'your@email.com'

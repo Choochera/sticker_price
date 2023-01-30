@@ -3,6 +3,7 @@ import Source.Fact_Parser.IFact_Parser as IFP
 import Source.constants as const
 import Source.Exceptions.DataRetrievalException as DRE
 import json
+from datetime import datetime
 
 
 class IFRS_Fact_Parser(IFP.IFact_Parser):
@@ -72,15 +73,23 @@ class IFRS_Fact_Parser(IFP.IFact_Parser):
         currency = key.replace(const.SLASH_SHARES, const.EMPTY)
 
         quarterly_EPS = []
+        period_end_dates: list[str] = []
         for period in data[const.UNITS][key]:
             try:
-                if 'Q' in period[const.FRAME] or 'Q' in period[const.FP]:
+                if (
+                    period[const.END] not in period_end_dates and
+                    days_between(
+                        period[const.START],
+                        period[const.END]
+                    ) < 105
+                ):
                     amount = float(period[const.VAL])
                     amount = self.c.convert(currency, const.USD, amount)
                     val = {
                         period[const.END]: amount
                     }
                     quarterly_EPS.append(val)
+                    period_end_dates.append(period[const.END])
             except KeyError:
                 # Skip values without frame
                 None
@@ -129,3 +138,9 @@ class IFRS_Fact_Parser(IFP.IFact_Parser):
         # Equation for price based on provided market benchmark
         # = (revenue / shares outstanding) * benchmark price-sales ratio
         return round(ttm_revenue / float(shares_outstanding), 3) * benchmark
+
+
+def days_between(d1, d2):
+    d1 = datetime.strptime(d1, "%Y-%m-%d")
+    d2 = datetime.strptime(d2, "%Y-%m-%d")
+    return abs((d2 - d1).days)
