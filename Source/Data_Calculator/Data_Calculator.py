@@ -1,4 +1,5 @@
 
+import json
 import Source.ComponentFactory as CF
 import Source.Exceptions.InsufficientDataException as IDE
 import Source.Exceptions.DataRetrievalException as DRE
@@ -228,13 +229,23 @@ class dataCalculator(IDC.IData_Calculator):
         try:
             a = self.retriever.retrieve_quarterly_shareholder_equity()
         except Exception as e:
-            raise DRE.DataRetrievalException(
-                const.EQUITY
-            )
+            with open(
+                'Errors/DRE_EQUITY_%s.json' % self.symbol,
+                const.WRITE
+            ) as file:
+                json.dump(self.facts, file)
+                raise DRE.DataRetrievalException(
+                    const.EQUITY
+                )
         try:
             b = self.retriever.retrieve_quarterly_outstanding_shares()
         except Exception as e:
-            raise DRE.DataRetrievalException(
-                const.OUTSTANDING_SHARES
-            )
+            with open(
+                'Errors/DRE_EQUITY_%s.json' % self.symbol,
+                const.WRITE
+            ) as file:
+                json.dump(self.facts, file)
+                raise DRE.DataRetrievalException(
+                    const.OUTSTANDING_SHARES
+                )
         return a, b
