@@ -10,9 +10,16 @@ DEFAULT_DB_USERNAME = 'postgres'
 DEFAULT_DB_PASSWORD = 'password'
 DEFAULT_DB_NAME = 'postgres'
 POST = 'POST'
+JSON_EXTENSION = '.json'
+CIK_MAP_FILENAME = 'cikMap.json'
+TRUE = 'True'
+EMPTY = ''
+CIK = 'CIK'
+CIK_MAP = 'cikMap'
 
 # Queries
-GET_PROCESSED_CIK_QUERY = 'SELECT cik from facts'
+GET_PROCESSED_CIK_QUERY = 'SELECT cik from facts;'
+DROP_FACTS_TABLE_QUERY = 'DROP TABLE IF EXISTS FACTS;'
 CREATE_FACTS_TABLE_QUERY = """CREATE TABLE IF NOT EXISTS facts (
                             cik varchar(13) not null primary key,
                             data jsonb

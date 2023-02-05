@@ -1,0 +1,1 @@
+python Service/Sticker-Price-Service.py
