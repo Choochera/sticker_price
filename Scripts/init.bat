@@ -1,3 +1,4 @@
+cd ../
 set db_username=postgres
 set db_password=password
 setx db_username postgres
@@ -10,6 +11,4 @@ pip install yfinance
 pip install forex_python
 pip install flask
 pip install pycodestyle
-cd Service
-python migrate_db.py
-python Sticker-Price-Service.py
+python Service/migrate_db.py
