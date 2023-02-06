@@ -66,27 +66,33 @@ class dataCalculator(IDC.IData_Calculator):
         qrtly_shareholder_equity = data[0]
         qrtly_outstanding_shares = data[1]
         last_share_value = -1
+        processedDates = []
         for equity in qrtly_shareholder_equity:
-            for shares in qrtly_outstanding_shares:
-                equity_key = list(equity.keys())[0]
-                shares_key = list(shares.keys())[0]
-                if equity_key == shares_key:
-                    if shares[shares_key] != 0:
-                        last_share_value = shares[shares_key]
-                    if shares[shares_key] != 0:
-                        val = {
-                            equity_key:
-                            float(equity[equity_key]) /
-                            float(shares[shares_key])
-                        }
-                    else:
-                        val = {
-                            equity_key:
-                            float(equity[equity_key]) /
-                            float(last_share_value)
-                        }
-                    quarterly_BVPS.append(val)
-
+            if (list(equity.keys())[0] not in str(processedDates)):
+                for shares in qrtly_outstanding_shares:
+                    equity_key = list(equity.keys())[0]
+                    shares_key = list(shares.keys())[0]
+                    if (
+                        list(equity.keys())[0] not in str(processedDates) and
+                        equity_key == shares_key
+                    ):
+                        if shares[shares_key] != 0:
+                            last_share_value = shares[shares_key]
+                        if shares[shares_key] != 0:
+                            val = {
+                                equity_key:
+                                float(equity[equity_key]) /
+                                float(shares[shares_key])
+                            }
+                        else:
+                            val = {
+                                equity_key:
+                                float(equity[equity_key]) /
+                                float(last_share_value)
+                            }
+                        quarterly_BVPS.append(val)
+                        processedDates.append(list(equity.keys())[0])
+                processedDates.append(list(equity.keys())[0])
         return quarterly_BVPS
 
     def calculate_sticker_price(
