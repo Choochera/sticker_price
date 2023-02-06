@@ -2,8 +2,8 @@ from forex_python.converter import CurrencyRates
 import Source.Fact_Parser.IFact_Parser as IFP
 import Source.constants as const
 import Source.Exceptions.DataRetrievalException as DRE
+import Source.ComponentFactory as CF
 import json
-from datetime import datetime
 
 
 class IFRS_Fact_Parser(IFP.IFact_Parser):
@@ -12,6 +12,7 @@ class IFRS_Fact_Parser(IFP.IFact_Parser):
         self.symbol = symbol
         self.c = CurrencyRates()
         self.facts = facts[const.FACTS]
+        self.helper = CF.ComponentFactory.getHelperObject()
 
     def retrieve_quarterly_shareholder_equity(self) -> list[dict]:
         try:
@@ -78,7 +79,7 @@ class IFRS_Fact_Parser(IFP.IFact_Parser):
             try:
                 if (
                     period[const.END] not in period_end_dates and
-                    days_between(
+                    self.helper.days_between(
                         period[const.START],
                         period[const.END]
                     ) < 105
@@ -138,9 +139,3 @@ class IFRS_Fact_Parser(IFP.IFact_Parser):
         # Equation for price based on provided market benchmark
         # = (revenue / shares outstanding) * benchmark price-sales ratio
         return round(ttm_revenue / float(shares_outstanding), 3) * benchmark
-
-
-def days_between(d1, d2):
-    d1 = datetime.strptime(d1, "%Y-%m-%d")
-    d2 = datetime.strptime(d2, "%Y-%m-%d")
-    return abs((d2 - d1).days)
