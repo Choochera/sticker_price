@@ -212,7 +212,7 @@ class dataCalculator(IDC.IData_Calculator):
             i -= 4
 
         periods = [1, 5, 10]
-        growth_rates = [tty_BVPS_growth, tfy_BVPS_growth, tty_BVPS_growth]
+        growth_rates = [tyy_BVPS_growth, tfy_BVPS_growth, tty_BVPS_growth]
 
         for i in range(3):
             self.append_price_values(
