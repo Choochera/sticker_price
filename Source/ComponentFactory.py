@@ -1,7 +1,7 @@
 import Source.Helper.Helper as Helper
 import Source.Helper.IHelper as IHelper
-import Source.Data_Retriever.GAAP_Data_Retriever as GDR
-import Source.Data_Retriever.IFRS_Data_Retriever as IDR
+import Source.Data_Retriever.GAAP_Data_Retriever as GAAP_DR
+import Source.Data_Retriever.IFRS_Data_Retriever as IFRS_DR
 import Source.Data_Retriever.IData_Retriever as IDR
 import Source.Data_Calculator.Data_Calculator as DC
 import Source.Data_Calculator.IData_Calculator as IDC
@@ -26,12 +26,12 @@ class ComponentFactory():
             facts: dict
             ) -> IDR.IData_Retriever:
         if (const.GAAP in facts[const.FACTS].keys()):
-            return GDR.GAAP_Data_Retriever(
+            return GAAP_DR.GAAP_Data_Retriever(
                 symbol,
                 facts
             )
         if (const.IFRS in facts[const.FACTS].keys()):
-            return IDR.IFRS_Data_Retriever(
+            return IFRS_DR.IFRS_Data_Retriever(
                 symbol,
                 facts
             )

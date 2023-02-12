@@ -29,6 +29,7 @@ ZACKS_URL = 'https://www.zacks.com/stock/quote/%s/detailed-estimates'
 USER_AGENT = '008'
 TABLE_DATA = '//td'
 NEXT_FIVE_YEARS = 'Next 5 Years'
+NET_PER_OUTSTANDING_LPU = 'NetIncomeLossPerOutstandingLimitedPartnershipUnit'
 
 # Component Factory
 GAAP = 'us-gaap'

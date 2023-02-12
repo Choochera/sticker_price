@@ -39,7 +39,10 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
 
     def retrieve_quarterly_EPS(self) -> list[dict]:
         return self.parser.retrieve_quarterly_data(
-            factsKeys=[const.EPS_BASIC],
+            factsKeys=[
+                const.EPS_BASIC,
+                const.NET_PER_OUTSTANDING_LPU
+                ],
             taxonomyType=const.GAAP,
         )
 
