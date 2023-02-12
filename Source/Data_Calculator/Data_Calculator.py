@@ -102,18 +102,16 @@ class dataCalculator(IDC.IData_Calculator):
             trailing_years: int,
             equity_growth_rate: float,
             annual_PE: list,
-            annual_EPS: list) -> dict:
+            annual_EPS: list,
+            analyst_growth_estimate: float) -> dict:
 
         result = dict()
         forward_PE = statistics.mean(annual_PE)
         current_qrtly_EPS = annual_EPS[0]/4
 
-        try:
-            analyst_growth_estimate = float(
-                self.retriever.retrieve_fy_growth_estimate())
-        except ValueError:
+        if (analyst_growth_estimate == const.NA):
             analyst_growth_estimate = equity_growth_rate.real
-
+            
         # If analyst estimates are lower than the
         # predicted equity growth rate, go with them
         if equity_growth_rate.real > analyst_growth_estimate.real:
@@ -216,6 +214,12 @@ class dataCalculator(IDC.IData_Calculator):
         periods = [1, 5, 10]
         growth_rates = [tyy_BVPS_growth, tfy_BVPS_growth, tty_BVPS_growth]
 
+        try:
+            analyst_growth_estimate = float(
+                self.retriever.retrieve_fy_growth_estimate())
+        except ValueError:
+            analyst_growth_estimate = const.NA
+            
         for i in range(3):
             self.append_price_values(
                 priceData,
@@ -223,7 +227,8 @@ class dataCalculator(IDC.IData_Calculator):
                     periods[i],
                     growth_rates[i],
                     annual_PE,
-                    annual_EPS
+                    annual_EPS,
+                    analyst_growth_estimate 
                     )
                 )
         priceData[const.RATIO_PRICE].append(
