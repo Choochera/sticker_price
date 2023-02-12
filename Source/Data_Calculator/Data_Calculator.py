@@ -23,6 +23,7 @@ class dataCalculator(IDC.IData_Calculator):
                 self.symbol,
                 self.facts
             )
+            self.helper = CF.ComponentFactory.getHelperObject()
         except Exception as e:
             raise e
 
@@ -67,6 +68,7 @@ class dataCalculator(IDC.IData_Calculator):
         qrtly_outstanding_shares = data[1]
         last_share_value = -1
         processedDates = []
+        qrtly_outstanding_shares.reverse()
         for equity in qrtly_shareholder_equity:
             if (list(equity.keys())[0] not in str(processedDates)):
                 for shares in qrtly_outstanding_shares:
@@ -74,7 +76,7 @@ class dataCalculator(IDC.IData_Calculator):
                     shares_key = list(shares.keys())[0]
                     if (
                         list(equity.keys())[0] not in str(processedDates) and
-                        equity_key == shares_key
+                        self.helper.days_between(equity_key, shares_key) <= 365
                     ):
                         if shares[shares_key] != 0:
                             last_share_value = shares[shares_key]
