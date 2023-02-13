@@ -7,12 +7,11 @@ import Source.ComponentFactory as CF
 
 class Fact_Parser(IFP.IFact_Parser):
 
-    def __init__(self, symbol: str, facts: dict, taxonomy: str = const.GAAP):
+    def __init__(self, symbol: str, facts: dict):
         self.symbol = symbol
         self.c = CurrencyRates()
         self.facts = facts[const.FACTS]
         self.helper = CF.ComponentFactory.getHelperObject()
-        self.taxonomy = taxonomy
 
     def retrieve_quarterly_data(
             self,
