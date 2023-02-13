@@ -60,7 +60,6 @@ class helper(Helper.IHelper):
                 const.WRITE
             ) as file:
                 json.dump(facts, file)
-                print(exceptionType)
                 raise DRE.DataRetrievalException(
                     messageType
                 )

@@ -21,8 +21,7 @@ class IFRS_Data_Retriever(IDR.IData_Retriever):
             factsKeys=[
                 const.UPPER_EQUITY
             ],
-            taxonomyType=const.IFRS,
-            hasStartDate=False
+            taxonomyType=const.IFRS
         )
 
     def retrieve_quarterly_outstanding_shares(self) -> list[dict]:
@@ -31,8 +30,7 @@ class IFRS_Data_Retriever(IDR.IData_Retriever):
                 const.NUMBER_OUTSTANDING
             ],
             deiFactsKeys=[const.E_COMMON_OUTSTANDING],
-            taxonomyType=const.IFRS,
-            hasStartDate=False
+            taxonomyType=const.IFRS
         )
 
     def retrieve_quarterly_EPS(self) -> list[dict]:

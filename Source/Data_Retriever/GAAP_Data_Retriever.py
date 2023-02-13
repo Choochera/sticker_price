@@ -19,8 +19,7 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
                 const.HOLDERS_EQUITY,
                 const.L_AND_H_EQUITY
             ],
-            taxonomyType=const.GAAP,
-            hasStartDate=False
+            taxonomyType=const.GAAP
         )
 
     def retrieve_quarterly_outstanding_shares(self) -> list[dict]:
@@ -31,8 +30,7 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
                 const.AVERAGE_NUM_SHARES_OUTSTANDING
             ],
             deiFactsKeys=[const.E_COMMON_OUTSTANDING],
-            taxonomyType=const.GAAP,
-            hasStartDate=False
+            taxonomyType=const.GAAP
         )
 
     def retrieve_quarterly_EPS(self) -> list[dict]:
@@ -41,7 +39,7 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
                 const.EPS_BASIC,
                 const.NET_PER_OUTSTANDING_LPU
                 ],
-            taxonomyType=const.GAAP,
+            taxonomyType=const.GAAP
         )
 
     def retrieve_benchmark_ratio_price(self, benchmark: float) -> float:

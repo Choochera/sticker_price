@@ -103,7 +103,8 @@ class dataCalculator(IDC.IData_Calculator):
             equity_growth_rate: float,
             annual_PE: list,
             annual_EPS: list,
-            analyst_growth_estimate: float) -> dict:
+            analyst_growth_estimate: float
+        ) -> dict:
 
         result = dict()
         forward_PE = statistics.mean(annual_PE)

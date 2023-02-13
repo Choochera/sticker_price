@@ -15,15 +15,23 @@ class Fact_Parser(IFP.IFact_Parser):
         self.helper = CF.ComponentFactory.getHelperObject()
         self.taxonomy = taxonomy
 
-    def retrieve_quarterly_data(self, factsKeys: list[str], taxonomyType: str = const.GAAP, deiFactsKeys: list[str] = [], hasStartDate: bool = True) -> list[dict]:
+    def retrieve_quarterly_data(self, factsKeys: list[str], taxonomyType: str = const.GAAP, deiFactsKeys: list[str] = []) -> list[dict]:
         data = self.__retrieve_requested_data(
             factsKeys=factsKeys,
             deiFactsKeys=deiFactsKeys,
             taxonomyType=taxonomyType
         )
+        hasStartDate = self.__checkHasStartDate(data)
+        
         if (hasStartDate):
-            return self.__populate_quarterly_data_with_start_date(data)
-        return self.__populate_quarterly_data_without_start_date(data)
+            quarterly_data = self.__populate_quarterly_data_with_start_date(data)
+        else:
+            quarterly_data = self.__populate_quarterly_data_without_start_date(data)
+
+        if (len(quarterly_data) == 0):
+            raise DRE.DataRetrievalException(const.NA)
+
+        return quarterly_data
 
     def __retrieve_requested_data(self, factsKeys: list[str], deiFactsKeys: list[str], taxonomyType: str) -> dict:
         data = None
@@ -46,6 +54,13 @@ class Fact_Parser(IFP.IFact_Parser):
             raise DRE.DataRetrievalException(const.NA)
         return data
 
+    def __checkHasStartDate(self, data: dict) -> bool:
+        quarter = data[const.UNITS][list(data[const.UNITS].keys())[0]][0]
+        try: 
+            return quarter[const.START] is not None
+        except KeyError:
+            return False
+            
     def __populate_quarterly_data_with_start_date(self, data: dict) -> list:
         quarterly_data = []
         period_end_dates: list[str] = []
