@@ -102,16 +102,15 @@ class dataCalculator(IDC.IData_Calculator):
             trailing_years: int,
             equity_growth_rate: float,
             annual_PE: list,
-            annual_EPS: list) -> dict:
+            annual_EPS: list,
+            analyst_growth_estimate: float
+    ) -> dict:
 
         result = dict()
         forward_PE = statistics.mean(annual_PE)
         current_qrtly_EPS = annual_EPS[0]/4
 
-        try:
-            analyst_growth_estimate = float(
-                self.retriever.retrieve_fy_growth_estimate())
-        except ValueError:
+        if (analyst_growth_estimate == const.NA):
             analyst_growth_estimate = equity_growth_rate.real
 
         # If analyst estimates are lower than the
@@ -121,7 +120,7 @@ class dataCalculator(IDC.IData_Calculator):
 
         # Calculate the sticker price of the stock today
         # relative to what predicted price will be in the future
-        num_years = 5
+        num_years = 10
         percent_return = 15
 
         # # Plug in acquired values into Rule #1 equation
@@ -216,6 +215,12 @@ class dataCalculator(IDC.IData_Calculator):
         periods = [1, 5, 10]
         growth_rates = [tyy_BVPS_growth, tfy_BVPS_growth, tty_BVPS_growth]
 
+        try:
+            analyst_growth_estimate = float(
+                self.retriever.retrieve_fy_growth_estimate())
+        except ValueError:
+            analyst_growth_estimate = const.NA
+
         for i in range(3):
             self.append_price_values(
                 priceData,
@@ -223,7 +228,8 @@ class dataCalculator(IDC.IData_Calculator):
                     periods[i],
                     growth_rates[i],
                     annual_PE,
-                    annual_EPS
+                    annual_EPS,
+                    analyst_growth_estimate
                     )
                 )
         priceData[const.RATIO_PRICE].append(
@@ -236,24 +242,20 @@ class dataCalculator(IDC.IData_Calculator):
     def retrieve_qrtly_BVPS_variables(self) -> tuple[list[dict], list[dict]]:
         try:
             a = self.retriever.retrieve_quarterly_shareholder_equity()
-        except Exception as e:
-            with open(
-                'Errors/DRE_EQUITY_%s.json' % self.symbol,
-                const.WRITE
-            ) as file:
-                json.dump(self.facts, file)
-                raise DRE.DataRetrievalException(
-                    const.EQUITY
-                )
+        except DRE.DataRetrievalException:
+            self.helper.write_error_file(
+                self.symbol,
+                const.EQUITY,
+                const.DRE,
+                self.facts
+            )
         try:
             b = self.retriever.retrieve_quarterly_outstanding_shares()
-        except Exception as e:
-            with open(
-                'Errors/DRE_EQUITY_%s.json' % self.symbol,
-                const.WRITE
-            ) as file:
-                json.dump(self.facts, file)
-                raise DRE.DataRetrievalException(
-                    const.OUTSTANDING_SHARES
-                )
+        except DRE.DataRetrievalException:
+            self.helper.write_error_file(
+                self.symbol,
+                const.OUTSTANDING_SHARES,
+                const.DRE,
+                self.facts
+            )
         return a, b

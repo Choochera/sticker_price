@@ -7,17 +7,10 @@ class IFact_Parser(ABC):
         None
 
     @abstractmethod
-    def retrieve_quarterly_shareholder_equity(self) -> list[dict]:
-        pass
-
-    @abstractmethod
-    def retrieve_quarterly_outstanding_shares(self) -> list[dict]:
-        pass
-
-    @abstractmethod
-    def retrieve_quarterly_EPS(self) -> list[dict]:
-        pass
-
-    @abstractmethod
-    def retrieve_benchmark_ratio_price(self, benchmark: float) -> float:
+    def retrieve_quarterly_data(
+        self,
+        factsKeys: list[str],
+        taxonomyType: str,
+        deiFactsKeys: list[str]
+    ) -> list[dict]:
         pass
