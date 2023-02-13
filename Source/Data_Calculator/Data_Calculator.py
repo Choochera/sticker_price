@@ -27,14 +27,13 @@ class dataCalculator(IDC.IData_Calculator):
         except Exception as e:
             raise e
 
-    def calculate_quarterly_PE(self) -> list[float]:
+    def calculate_quarterly_PE(self, quarterly_EPS: dict) -> list[float]:
         # ttm PE = price at earnings announcement / ttm EPS
-        quarterly_EPS = self.retriever.retrieve_quarterly_EPS()
         quarterly_PE = []
 
-        for i in range(len(quarterly_EPS)):
+        for quarter in quarterly_EPS:
             date = datetime.strptime(
-                list(quarterly_EPS[i].keys())[0],
+                list(quarter.keys())[0],
                 '%Y-%m-%d').date()
             if date.weekday() == 5:
                 date = date - timedelta(days=1)
@@ -47,14 +46,19 @@ class dataCalculator(IDC.IData_Calculator):
             while price == 0 and attempts < 7:
                 try:
                     dataForDate = self.h_data.loc[date]
-                    price = float(dataForDate[const.ADJ_CLOSE][self.symbol])
+                    try:
+                        price = float(
+                            dataForDate[const.ADJ_CLOSE][self.symbol]
+                        )
+                    except IndexError:
+                        price = float(dataForDate[const.ADJ_CLOSE])
                 except KeyError:
                     date = datetime.strptime(date, '%Y-%m-%d').date()
                     date = date + timedelta(days=1)
                     date = str(date)
                     attempts += 1
 
-            eps = float(list(quarterly_EPS[i].values())[0])
+            eps = float(list(quarter.values())[0])
             try:
                 quarterly_PE.append(price/eps)
             except ZeroDivisionError:
@@ -172,8 +176,8 @@ class dataCalculator(IDC.IData_Calculator):
         # Calculate trailing 10 year annual BVPS growth rate
         try:
             tyy_BVPS_growth = ((
-                first_quarter[0] /
-                first_quarter[len(first_quarter) - 1]) ** (1/4) - 1) * 100
+                first_quarter[len(first_quarter) - 1] /
+                first_quarter[0]) ** (1/1) - 1) * 100
             tfy_BVPS_growth = ((
                 annual_BVPS[0] / annual_BVPS[4]) ** (1/5) - 1) * 100
             tty_BVPS_growth = ((
@@ -185,7 +189,8 @@ class dataCalculator(IDC.IData_Calculator):
 
         # Calculate annual PE
         annual_PE = []
-        quarterly_PE = self.calculate_quarterly_PE()
+        quarterly_EPS = self.retriever.retrieve_quarterly_EPS()
+        quarterly_PE = self.calculate_quarterly_PE(quarterly_EPS)
         priceData[const.QRTLY_PE] = quarterly_PE
 
         if (len(quarterly_PE) < 4):
@@ -198,7 +203,6 @@ class dataCalculator(IDC.IData_Calculator):
             i -= 4
 
         # Retrieve current EPS and set values for equation
-        quarterly_EPS = self.retriever.retrieve_quarterly_EPS()
         priceData[const.QRTLY_EPS] = quarterly_EPS
         annual_EPS = []
         i = len(quarterly_EPS) - 4
