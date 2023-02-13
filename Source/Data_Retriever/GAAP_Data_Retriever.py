@@ -27,7 +27,7 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
             factsKeys=[
                 const.COMMON_SHARES_OUTSTANDING,
                 const.COMMON_SHARES_ISSUED,
-                const.AVERAGE_NUM_SHARES_OUTSTANDING
+                const.AVG_NUM_SHARES_OUTSTANDING
             ],
             deiFactsKeys=[const.E_COMMON_OUTSTANDING],
             taxonomyType=const.GAAP
@@ -44,13 +44,24 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
 
     def retrieve_benchmark_ratio_price(self, benchmark: float) -> float:
         try:
-            data = self.parser.retrieve_quarterly_data(factsKeys=[const.GROSS_PROFIT, const.REVENUES], taxonomyType=const.GAAP)
+            data = self.parser.retrieve_quarterly_data(
+                factsKeys=[
+                    const.GROSS_PROFIT,
+                    const.REVENUES
+                ],
+                taxonomyType=const.GAAP
+            )
         except Exception:
             print('Could not retrieve benchmark'
-                      'ratio price for symbol: ' + self.symbol)
+                  'ratio price for symbol: ' + self.symbol)
             return 0
-        
-        qrtly_revenue = list(map(lambda quarter: quarter[list(quarter.keys())[0]], data))
+
+        qrtly_revenue = list(
+            map(
+                lambda quarter: quarter[list(quarter.keys())[0]],
+                data
+            )
+        )
         shares_outstanding = self.retrieve_quarterly_outstanding_shares()
         shares_outstanding = list(
             shares_outstanding[len(shares_outstanding) - 1].values()

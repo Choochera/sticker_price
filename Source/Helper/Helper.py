@@ -56,13 +56,13 @@ class helper(Helper.IHelper):
         facts: dict
     ) -> None:
         with open(
-                'Errors/%s_%s_%s.json' % (exceptionType, messageType, symbol),
-                const.WRITE
-            ) as file:
-                json.dump(facts, file)
-                raise DRE.DataRetrievalException(
-                    messageType
-                )
+            'Errors/%s_%s_%s.json' % (exceptionType, messageType, symbol),
+            const.WRITE
+        ) as file:
+            json.dump(facts, file)
+            raise DRE.DataRetrievalException(
+                messageType
+            )
 
     def write_processed_symbols(
             self,

@@ -104,7 +104,7 @@ class dataCalculator(IDC.IData_Calculator):
             annual_PE: list,
             annual_EPS: list,
             analyst_growth_estimate: float
-        ) -> dict:
+    ) -> dict:
 
         result = dict()
         forward_PE = statistics.mean(annual_PE)
@@ -112,7 +112,7 @@ class dataCalculator(IDC.IData_Calculator):
 
         if (analyst_growth_estimate == const.NA):
             analyst_growth_estimate = equity_growth_rate.real
-            
+
         # If analyst estimates are lower than the
         # predicted equity growth rate, go with them
         if equity_growth_rate.real > analyst_growth_estimate.real:
@@ -220,7 +220,7 @@ class dataCalculator(IDC.IData_Calculator):
                 self.retriever.retrieve_fy_growth_estimate())
         except ValueError:
             analyst_growth_estimate = const.NA
-            
+
         for i in range(3):
             self.append_price_values(
                 priceData,
@@ -229,7 +229,7 @@ class dataCalculator(IDC.IData_Calculator):
                     growth_rates[i],
                     annual_PE,
                     annual_EPS,
-                    analyst_growth_estimate 
+                    analyst_growth_estimate
                     )
                 )
         priceData[const.RATIO_PRICE].append(
@@ -243,9 +243,19 @@ class dataCalculator(IDC.IData_Calculator):
         try:
             a = self.retriever.retrieve_quarterly_shareholder_equity()
         except DRE.DataRetrievalException:
-            self.helper.write_error_file(self.symbol, const.EQUITY, const.DRE, self.facts)
+            self.helper.write_error_file(
+                self.symbol,
+                const.EQUITY,
+                const.DRE,
+                self.facts
+            )
         try:
             b = self.retriever.retrieve_quarterly_outstanding_shares()
         except DRE.DataRetrievalException:
-            self.helper.write_error_file(self.symbol, const.OUTSTANDING_SHARES, const.DRE, self.facts)
+            self.helper.write_error_file(
+                self.symbol,
+                const.OUTSTANDING_SHARES,
+                const.DRE,
+                self.facts
+            )
         return a, b

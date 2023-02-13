@@ -41,13 +41,24 @@ class IFRS_Data_Retriever(IDR.IData_Retriever):
 
     def retrieve_benchmark_ratio_price(self, benchmark: float) -> float:
         try:
-            data = self.parser.retrieve_quarterly_data(factsKeys=[const.GROSS_PROFIT, const.REVENUE], taxonomyType=const.IFRS)
+            data = self.parser.retrieve_quarterly_data(
+                factsKeys=[
+                    const.GROSS_PROFIT,
+                    const.REVENUE
+                ],
+                taxonomyType=const.IFRS
+            )
         except Exception:
             print('Could not retrieve benchmark'
-                      'ratio price for symbol: ' + self.symbol)
+                  'ratio price for symbol: ' + self.symbol)
             return 0
-        
-        qrtly_revenue = list(map(lambda quarter: quarter[list(quarter.keys())[0]], data))
+
+        qrtly_revenue = list(
+            map(
+                lambda quarter: quarter[list(quarter.keys())[0]],
+                data
+            )
+        )
         shares_outstanding = self.retrieve_quarterly_outstanding_shares()
         shares_outstanding = list(
             shares_outstanding[len(shares_outstanding) - 1].values()

@@ -4,6 +4,7 @@ import lxml.html as lh
 import Source.constants as const
 import Source.Exceptions.DataRetrievalException as DRE
 
+
 class IData_Retriever(ABC):
 
     def __init__(self):

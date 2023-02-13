@@ -3,7 +3,6 @@ import Source.Fact_Parser.IFact_Parser as IFP
 import Source.constants as const
 import Source.Exceptions.DataRetrievalException as DRE
 import Source.ComponentFactory as CF
-import json
 
 
 class Fact_Parser(IFP.IFact_Parser):
@@ -15,25 +14,39 @@ class Fact_Parser(IFP.IFact_Parser):
         self.helper = CF.ComponentFactory.getHelperObject()
         self.taxonomy = taxonomy
 
-    def retrieve_quarterly_data(self, factsKeys: list[str], taxonomyType: str = const.GAAP, deiFactsKeys: list[str] = []) -> list[dict]:
+    def retrieve_quarterly_data(
+            self,
+            factsKeys: list[str],
+            taxonomyType: str = const.GAAP,
+            deiFactsKeys: list[str] = []
+    ) -> list[dict]:
         data = self.__retrieve_requested_data(
             factsKeys=factsKeys,
             deiFactsKeys=deiFactsKeys,
             taxonomyType=taxonomyType
         )
         hasStartDate = self.__checkHasStartDate(data)
-        
+
         if (hasStartDate):
-            quarterly_data = self.__populate_quarterly_data_with_start_date(data)
+            quarterly_data = self.__populate_quarterly_data_with_start_date(
+                data
+            )
         else:
-            quarterly_data = self.__populate_quarterly_data_without_start_date(data)
+            quarterly_data = self.__populate_quarterly_data_without_start_date(
+                data
+            )
 
         if (len(quarterly_data) == 0):
             raise DRE.DataRetrievalException(const.NA)
 
         return quarterly_data
 
-    def __retrieve_requested_data(self, factsKeys: list[str], deiFactsKeys: list[str], taxonomyType: str) -> dict:
+    def __retrieve_requested_data(
+            self,
+            factsKeys: list[str],
+            deiFactsKeys: list[str],
+            taxonomyType: str
+    ) -> dict:
         data = None
         i = 0
         while (data is None and i < len(factsKeys)):
@@ -56,11 +69,11 @@ class Fact_Parser(IFP.IFact_Parser):
 
     def __checkHasStartDate(self, data: dict) -> bool:
         quarter = data[const.UNITS][list(data[const.UNITS].keys())[0]][0]
-        try: 
+        try:
             return quarter[const.START] is not None
         except KeyError:
             return False
-            
+
     def __populate_quarterly_data_with_start_date(self, data: dict) -> list:
         quarterly_data = []
         period_end_dates: list[str] = []
@@ -86,7 +99,7 @@ class Fact_Parser(IFP.IFact_Parser):
                 # Skip values without frame
                 None
         return quarterly_data
-        
+
     def __populate_quarterly_data_without_start_date(self, data: dict) -> list:
         quarterly_data = []
         isShares = False
@@ -95,7 +108,7 @@ class Fact_Parser(IFP.IFact_Parser):
         for period in data[const.UNITS][currency]:
             amount: float = float(period[const.VAL])
             if (not isShares):
-                try:          
+                try:
                     amount = self.c.convert(currency, const.USD, amount)
                 except Exception as e:
                     if (str(e) == const.INVALID_CURRENCY_MESSAGE):

@@ -11,7 +11,6 @@ class IFact_Parser(ABC):
         self,
         factsKeys: list[str],
         taxonomyType: str,
-        deiFactsKeys: list[str],
-        hasStartDate: bool
+        deiFactsKeys: list[str]
     ) -> list[dict]:
         pass
