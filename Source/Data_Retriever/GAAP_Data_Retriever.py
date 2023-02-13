@@ -83,3 +83,15 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
             factsKeys=[const.DEBT_CURRENT],
             taxonomyType=const.GAAP,
         )
+
+    def retrieve_quarterly_total_assets(self) -> list[dict]:
+        return self.parser.retrieve_quarterly_data(
+            factsKeys=[const.ASSETS],
+            taxonomyType=const.GAAP
+        )
+
+    def retrieve_quarterly_total_cash(self) -> list[dict]:
+        return self.parser.retrieve_quarterly_data(
+            factsKeys=[const.CASH_AT_CARRYING_VALUE],
+            taxonomyType=const.GAAP
+        )

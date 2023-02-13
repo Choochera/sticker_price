@@ -34,6 +34,14 @@ class IData_Retriever(ABC):
     def retrieve_quarterly_total_debt(self) -> list[dict]:
         pass
 
+    @abstractmethod
+    def retrieve_quarterly_total_assets(self) -> list[dict]:
+        pass
+
+    @abstractmethod
+    def retrieve_quarterly_total_cash(self) -> list[dict]:
+        pass
+
     def retrieve_fy_growth_estimate(self) -> float:
         url = const.ZACKS_URL % self.symbol
         try:
