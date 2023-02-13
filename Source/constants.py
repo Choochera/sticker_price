@@ -68,6 +68,8 @@ NET_INCOME_LOSS = 'NetIncomeLoss'
 DEBT_CURRENT = 'DebtCurrent'
 LONG_TERM_DEBT = 'LongTermDebt'
 INVALID_CURRENCY_MESSAGE = 'Currency Rates Source Not Ready'
+ASSETS = 'ASSETS'
+CASH_AT_CARRYING_VALUE = 'CashAndCashEquivalentsAtCarryingValue'
 
 # Helper
 HELPER_USER_AGENT = 'your@email.com'
