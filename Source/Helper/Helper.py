@@ -48,6 +48,23 @@ class helper(Helper.IHelper):
                 dict_list[lname] += [padel] * (lmax - ll)
         return dict_list
 
+    def write_error_file(
+        self,
+        symbol: str,
+        messageType: str,
+        exceptionType: str,
+        facts: dict
+    ) -> None:
+        with open(
+                'Errors/%s_%s_%s.json' % (exceptionType, messageType, symbol),
+                const.WRITE
+            ) as file:
+                json.dump(facts, file)
+                print(exceptionType)
+                raise DRE.DataRetrievalException(
+                    messageType
+                )
+
     def write_processed_symbols(
             self,
             symbol: str = None,

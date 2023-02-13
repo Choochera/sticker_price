@@ -119,7 +119,7 @@ class dataCalculator(IDC.IData_Calculator):
 
         # Calculate the sticker price of the stock today
         # relative to what predicted price will be in the future
-        num_years = 5
+        num_years = 10
         percent_return = 15
 
         # # Plug in acquired values into Rule #1 equation
@@ -241,24 +241,10 @@ class dataCalculator(IDC.IData_Calculator):
     def retrieve_qrtly_BVPS_variables(self) -> tuple[list[dict], list[dict]]:
         try:
             a = self.retriever.retrieve_quarterly_shareholder_equity()
-        except Exception as e:
-            with open(
-                'Errors/DRE_EQUITY_%s.json' % self.symbol,
-                const.WRITE
-            ) as file:
-                json.dump(self.facts, file)
-                raise DRE.DataRetrievalException(
-                    const.EQUITY
-                )
+        except DRE.DataRetrievalException:
+            self.helper.write_error_file(self.symbol, const.EQUITY, const.DRE, self.facts)
         try:
             b = self.retriever.retrieve_quarterly_outstanding_shares()
-        except Exception as e:
-            with open(
-                'Errors/DRE_EQUITY_%s.json' % self.symbol,
-                const.WRITE
-            ) as file:
-                json.dump(self.facts, file)
-                raise DRE.DataRetrievalException(
-                    const.OUTSTANDING_SHARES
-                )
+        except DRE.DataRetrievalException:
+            self.helper.write_error_file(self.symbol, const.OUTSTANDING_SHARES, const.DRE, self.facts)
         return a, b
