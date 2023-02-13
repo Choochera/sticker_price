@@ -27,7 +27,8 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
         return self.parser.retrieve_quarterly_data(
             factsKeys=[
                 const.COMMON_SHARES_OUTSTANDING,
-                const.COMMON_SHARES_ISSUED
+                const.COMMON_SHARES_ISSUED,
+                const.AVERAGE_NUM_SHARES_OUTSTANDING
             ],
             deiFactsKeys=[const.E_COMMON_OUTSTANDING],
             taxonomyType=const.GAAP,
