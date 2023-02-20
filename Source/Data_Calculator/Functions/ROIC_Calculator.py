@@ -79,13 +79,16 @@ class ROIC_Calculator(IDC.IData_Calculator_Function):
         try:
             c = self.retriever.retrieve_quarterly_long_term_debt()
         except DRE.DataRetrievalException as e:
-            self.helper.write_error_file(
-                self.symbol,
-                const.LONG_TERM_DEBT,
-                const.DRE,
-                self.facts
-            )
-            raise e
+            try:
+                c = self.__calculate_long_term_debt()
+            except DRE.DataRetrievalException as e:
+                self.helper.write_error_file(
+                    self.symbol,
+                    const.LONG_TERM_DEBT,
+                    const.DRE,
+                    self.facts
+                )
+                raise e
 
         self.quarterly_net_income = a
         self.quarterly_shareholder_equity = b
@@ -132,3 +135,23 @@ class ROIC_Calculator(IDC.IData_Calculator_Function):
                 sum = 0
                 numQuarters = 0
         return annual_income
+
+    def __calculate_long_term_debt(self) -> list[dict]:
+        years = self.retriever.retrieve_long_term_debt_parts()
+        long_term_debt = dict()
+        for year in years:
+            processedDates = []
+            for quarter in year:
+                date = list(quarter.keys())[0]
+                if (date not in str(processedDates)):
+                    try:
+                        long_term_debt[date] += quarter[date]
+                    except KeyError:
+                        long_term_debt[date] = quarter[date]
+                    processedDates += date
+        result: list[dict] = []
+        for key in list(long_term_debt.keys()):
+            result.append({
+                key: long_term_debt[key]
+            })
+        return result

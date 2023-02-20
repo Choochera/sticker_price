@@ -35,6 +35,11 @@ NEXT_FIVE_YEARS = 'Next 5 Years'
 NET_PER_OUTSTANDING_LPU = 'NetIncomeLossPerOutstandingLimitedPartnershipUnit'
 AVG_NUM_SHARES_OUTSTANDING = 'WeightedAverageNumberOfSharesOutstandingBasic'
 UNSECURED_LONG_TERM_DEBT = 'UnsecuredLongTermDebt'
+LONG_TERM_DEBT_TTM = 'LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths'
+LONG_TERM_DEBT_YEAR_TWO = 'LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo'
+LONG_TERM_DEBT_YEAR_THREE = 'LongTermDebtMaturitiesRepaymentsOfPrincipalInYearThree'
+LONG_TERM_DEBT_YEAR_FOUR = 'LongTermDebtMaturitiesRepaymentsOfPrincipalInYearFour'
+LONG_TERM_DEBT_YEAR_FIVE = 'LongTermDebtMaturitiesRepaymentsOfPrincipalInYearFive'
 
 # Component Factory
 GAAP = 'us-gaap'

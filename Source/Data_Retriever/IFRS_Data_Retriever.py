@@ -86,3 +86,22 @@ class IFRS_Data_Retriever(IDR.IData_Retriever):
             factsKeys=[const.LONG_TERM_DEBT],
             taxonomyType=const.GAAP
         )
+
+    def retrieve_long_term_debt_parts(self) -> list[list[dict]]:
+        parts: list[list[dict]] = []
+        keys = [
+            const.LONG_TERM_DEBT_TTM,
+            const.LONG_TERM_DEBT_YEAR_TWO,
+            const.LONG_TERM_DEBT_YEAR_THREE,
+            const.LONG_TERM_DEBT_YEAR_FOUR,
+            const.LONG_TERM_DEBT_YEAR_FIVE
+        ]
+        for key in keys:
+            try:
+                parts.append(self.parser.retrieve_quarterly_data(
+                    factsKeys=[key],
+                    taxonomyType=const.IFRS
+                ))
+            except Exception:
+                pass
+        return parts
