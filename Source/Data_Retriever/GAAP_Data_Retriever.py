@@ -98,6 +98,7 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
 
     def retrieve_quarterly_long_term_debt(self) -> list[dict]:
         return self.parser.retrieve_quarterly_data(
-            factsKeys=[const.LONG_TERM_DEBT],
+            factsKeys=[const.LONG_TERM_DEBT,
+                       const.UNSECURED_LONG_TERM_DEBT],
             taxonomyType=const.GAAP
         )

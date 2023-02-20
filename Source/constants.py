@@ -34,6 +34,7 @@ TABLE_DATA = '//td'
 NEXT_FIVE_YEARS = 'Next 5 Years'
 NET_PER_OUTSTANDING_LPU = 'NetIncomeLossPerOutstandingLimitedPartnershipUnit'
 AVG_NUM_SHARES_OUTSTANDING = 'WeightedAverageNumberOfSharesOutstandingBasic'
+UNSECURED_LONG_TERM_DEBT = 'UnsecuredLongTermDebt'
 
 # Component Factory
 GAAP = 'us-gaap'
