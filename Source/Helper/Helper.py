@@ -37,6 +37,8 @@ class helper(Helper.IHelper):
             return response.json()[0][0]
         except simplejson.errors.JSONDecodeError:
             raise DRE.DataRetrievalException(const.FACTS)
+        except IndexError:
+            raise DRE.DataRetrievalException(const.EMPTY_FACTS)
 
     def add_padding_to_collection(self, dict_list: dict, padel: str) -> None:
         lmax = 0
@@ -138,7 +140,8 @@ class helper(Helper.IHelper):
                 for line in lines:
                     stock = line.split('\n')[0]
                     if (len(stock) > 0):
-                        stocks.append(stock)
+                        if (stock.isalpha()):
+                            stocks.append(stock)
         except FileNotFoundError:
             with open(const.STOCKLIST_FILE, const.WRITE) as f:
                 None
