@@ -14,10 +14,3 @@ class IData_Calculator_Function(ABC):
     @abstractmethod
     def set_variables(self) -> None:
         pass
-
-    @abstractmethod
-    def annualize(
-        self,
-        quarterly_data: list[dict]
-    ) -> list[float] or tuple[list[float], list[float]]:
-        pass

@@ -95,3 +95,9 @@ class GAAP_Data_Retriever(IDR.IData_Retriever):
             factsKeys=[const.CASH_AT_CARRYING_VALUE],
             taxonomyType=const.GAAP
         )
+
+    def retrieve_quarterly_long_term_debt(self) -> list[dict]:
+        return self.parser.retrieve_quarterly_data(
+            factsKeys=[const.LONG_TERM_DEBT],
+            taxonomyType=const.GAAP
+        )
