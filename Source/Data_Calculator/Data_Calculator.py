@@ -9,6 +9,7 @@ import Source.Data_Calculator.Functions.BVPS_Calculator as BVPS_Calculator
 import Source.Data_Calculator.Functions.Price_Calculator as SP_Calculator
 import Source.Data_Calculator.Functions.ROIC_Calculator as ROIC_Calculator
 
+
 class dataCalculator():
 
     def __init__(self, symbol: str, h_data: dict, facts: dict):
@@ -84,7 +85,9 @@ class dataCalculator():
             self.facts
         )
         self.function.set_variables()
-        priceData[const.ROIC] = ROIC_Calculator.ROIC_Calculator.calculate(self.function)
+        priceData[const.ROIC] = ROIC_Calculator.ROIC_Calculator.calculate(
+            self.function
+        )
 
         periods = [1, 5, 10]
         growth_rates = [tyy_BVPS_growth, tfy_BVPS_growth, tty_BVPS_growth]

@@ -39,12 +39,17 @@ class ROIC_Calculator(IDC.IData_Calculator_Function):
                     investedCapital_key = list(investedCapital.keys())[0]
                     if (
                         list(income.keys())[0] not in str(processedDates) and
-                        self.helper.days_between(income_key, investedCapital_key) <= 365
+                        self.helper.days_between(
+                            income_key,
+                            investedCapital_key
+                        ) <= 365
                     ):
                         val = {
                             income_key:
-                            (float(income[income_key]) /
-                            float(investedCapital[investedCapital_key])) * 100
+                            (
+                                float(income[income_key]) /
+                                float(investedCapital[investedCapital_key])
+                            ) * 100
                         }
                         annual_ROIC.insert(0, val)
                         processedDates.append(list(income.keys())[0])
@@ -110,7 +115,7 @@ class ROIC_Calculator(IDC.IData_Calculator_Function):
         return quarterly_IC
 
     def __calculate_annual_income(self) -> list[dict]:
-        annual_income: list[float]  = []
+        annual_income: list[float] = []
         sum: float = 0
         numQuarters: int = 0
         for quarter in reversed(self.quarterly_net_income):
@@ -118,7 +123,7 @@ class ROIC_Calculator(IDC.IData_Calculator_Function):
             if (numQuarters == 0):
                 endDate = date
             sum += quarter[date]
-            numQuarters += 1 
+            numQuarters += 1
             if (numQuarters == 4):
                 val = {
                     endDate: sum
