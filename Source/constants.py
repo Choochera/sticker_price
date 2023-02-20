@@ -24,6 +24,7 @@ REQUEST = 'request'
 NO_FACTS = 'facts'
 ALL_PROCESSED = 'processed'
 DRE = 'DataRetrievalException'
+EMPTY_FACTS = 'emptyFacts'
 
 # Data Retriever
 ZACKS_URL = 'https://www.zacks.com/stock/quote/%s/detailed-estimates'

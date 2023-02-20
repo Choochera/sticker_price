@@ -37,6 +37,8 @@ class helper(Helper.IHelper):
             return response.json()[0][0]
         except simplejson.errors.JSONDecodeError:
             raise DRE.DataRetrievalException(const.FACTS)
+        except IndexError:
+            raise DRE.DataRetrievalException(const.EMPTY_FACTS)
 
     def add_padding_to_collection(self, dict_list: dict, padel: str) -> None:
         lmax = 0
