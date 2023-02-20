@@ -138,7 +138,8 @@ class helper(Helper.IHelper):
                 for line in lines:
                     stock = line.split('\n')[0]
                     if (len(stock) > 0):
-                        stocks.append(stock)
+                        if (stock.isalpha()):
+                            stocks.append(stock)
         except FileNotFoundError:
             with open(const.STOCKLIST_FILE, const.WRITE) as f:
                 None

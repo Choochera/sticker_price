@@ -72,8 +72,8 @@ class priceCheckWorker (threading.Thread, IPCW.IPrice_Check_Worker):
                 and sale_prices[1] > 0
                 and sale_prices[2] > 0) and
                 (price < sale_prices[0]
-                    or price < sale_prices[1]
-                    or price < sale_prices[2])):
+                    and price < sale_prices[1]
+                    and price < sale_prices[2])):
                 print(const.ON_SALE % symbol)
                 self.helper.add_padding_to_collection(priceData, const.EMPTY)
                 df = pd.DataFrame.from_dict(priceData)
