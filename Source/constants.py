@@ -7,6 +7,7 @@ RATIO_PRICE = 'ratio_price'
 QRTLY_BVPS = 'quarterly_bvps'
 QRTLY_PE = 'quarterly_pe'
 QRTLY_EPS = 'quarterly_eps'
+ROIC = 'ROIC'
 
 # Exceptions
 H_DATA = 'h_data'

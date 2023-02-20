@@ -7,7 +7,7 @@ import Source.Data_Calculator.Functions.PE_Calculator as PE_Calculator
 import Source.Data_Calculator.Functions.IData_Calculator_Function as IDC
 import Source.Data_Calculator.Functions.BVPS_Calculator as BVPS_Calculator
 import Source.Data_Calculator.Functions.Price_Calculator as SP_Calculator
-
+import Source.Data_Calculator.Functions.ROIC_Calculator as ROIC_Calculator
 
 class dataCalculator():
 
@@ -77,6 +77,14 @@ class dataCalculator():
         # Retrieve current EPS and set values for equation
         priceData[const.QRTLY_EPS] = quarterly_EPS
         annual_EPS = self.__annualize_quarterly_EPS(quarterly_EPS)
+
+        # Retrieve ROIC over passed 10 years
+        self.function = ROIC_Calculator.ROIC_Calculator(
+            self.symbol,
+            self.facts
+        )
+        self.function.set_variables()
+        priceData[const.ROIC] = ROIC_Calculator.ROIC_Calculator.calculate(self.function)
 
         periods = [1, 5, 10]
         growth_rates = [tyy_BVPS_growth, tfy_BVPS_growth, tty_BVPS_growth]
