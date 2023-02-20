@@ -3,6 +3,7 @@ import Source.ComponentFactory as CF
 import Source.Exceptions.DataRetrievalException as DRE
 import Source.Data_Calculator.Functions.IData_Calculator_Function as IDC
 import Source.constants as const
+import Source.Exceptions.InsufficientDataException as IDE
 
 
 class BVPS_Calculator(IDC.IData_Calculator_Function):
@@ -80,3 +81,20 @@ class BVPS_Calculator(IDC.IData_Calculator_Function):
 
         self.quarterly_shareholder_equity = a
         self.quarterly_outstanding_shares = b
+
+    def annualize(self, quarterly_BVPS) -> tuple[list[float], list[float]]:
+        if (len(quarterly_BVPS) < 40):
+            raise IDE.InsufficientDataException(const.QRTLY_BVPS)
+        annual_BVPS: list[float] = []
+        first_quarter: list[float] = []
+        i = len(quarterly_BVPS) - 4
+        while i > 0 and i > len(quarterly_BVPS) - 44:
+            quarters = quarterly_BVPS[i: i+4]
+            s = 0
+            for quarter in quarters:
+                s += list(quarter.values())[0]
+                if len(annual_BVPS) == 0:
+                    first_quarter.append(list(quarter.values())[0])
+            annual_BVPS.append(float(s/len(quarters)))
+            i -= 4
+        return [first_quarter, annual_BVPS]

@@ -44,17 +44,7 @@ class dataCalculator():
         priceData[const.QRTLY_BVPS] = quarterly_BVPS
 
         # annualize quarterly book values for dataframe consistency
-        first_quarter = []
-        i = len(quarterly_BVPS) - 4
-        while i > 0 and i > len(quarterly_BVPS) - 44:
-            quarters = quarterly_BVPS[i: i+4]
-            s = 0
-            for quarter in quarters:
-                s += list(quarter.values())[0]
-                if len(annual_BVPS) == 0:
-                    first_quarter.append(list(quarter.values())[0])
-            annual_BVPS.append(float(s/len(quarters)))
-            i -= 4
+        first_quarter, annual_BVPS = self.function.annualize(quarterly_BVPS)
 
         # Calculate trailing 10 year annual BVPS growth rate
         try:
@@ -81,17 +71,8 @@ class dataCalculator():
         )
         self.function.set_variables(quarterly_EPS)
         quarterly_PE = PE_Calculator.PE_Calculator.calculate(self.function)
-
         priceData[const.QRTLY_PE] = quarterly_PE
-
-        if (len(quarterly_PE) < 4):
-            raise IDE.InsufficientDataException(const.QRTLY_PE)
-
-        i = len(quarterly_PE) - 4
-        while i > 0 and i > len(quarterly_PE) - 44:
-            quarters = quarterly_PE[i: i+4]
-            annual_PE.append(float(sum(quarters)/len(quarters)))
-            i -= 4
+        annual_PE = self.function.annualize(quarterly_PE)
 
         # Retrieve current EPS and set values for equation
         priceData[const.QRTLY_EPS] = quarterly_EPS

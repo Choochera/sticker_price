@@ -3,6 +3,7 @@ import Source.ComponentFactory as CF
 from datetime import datetime, timedelta
 import Source.Data_Calculator.Functions.IData_Calculator_Function as IDC
 import Source.constants as const
+import Source.Exceptions.InsufficientDataException as IDE
 
 
 class PE_Calculator(IDC.IData_Calculator_Function):
@@ -69,3 +70,14 @@ class PE_Calculator(IDC.IData_Calculator_Function):
             self.quarterly_EPS = quarterly_EPS
         else:
             self.quarterly_EPS = self.retriever.retrieve_quarterly_EPS()
+
+    def annualize(self, quarterly_PE: list[dict]) -> list[float]:
+        if (len(quarterly_PE) < 40):
+            raise IDE.InsufficientDataException(const.QRTLY_PE)
+        annual_PE: list[float] = []
+        i = len(quarterly_PE) - 4
+        while i > 0 and i > len(quarterly_PE) - 44:
+            quarters = quarterly_PE[i: i+4]
+            annual_PE.append(float(sum(quarters)/len(quarters)))
+            i -= 4
+        return annual_PE
