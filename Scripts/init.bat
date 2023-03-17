@@ -11,4 +11,4 @@ pip install yfinance
 pip install forex_python
 pip install flask
 pip install pycodestyle
-python Service/migrate_db.py
+python Service/migrate_db.py True

@@ -46,12 +46,7 @@ def __drop_facts(connection, cursor) -> None:
 
 def __delete_data() -> None:
     print("Deleting current facts data...")
-    for file_name in listdir(const.DATA_DIRECTORY):
-        if (
-            file_name != const.CIK_MAP_FILENAME and
-            file_name.endswith(const.JSON_EXTENSION)
-        ):
-            os.remove(const.DATA_DIRECTORY + '\\' + file_name)
+    shutil.rmtree('Data')
 
 
 def __download_data() -> None:
@@ -105,6 +100,8 @@ def __update_database(fileToProcess, cik) -> None:
             text = text.replace('\'', const.EMPTY)
             try:
                 cursor.execute(const.UPDATE_DATA_QUERY % (
+                    cik,
+                    text,
                     text,
                     cik
                 ))
@@ -137,7 +134,7 @@ if __name__ == '__main__':
         connection.commit()
 
     __initialize_db(connection, cursor)
-    # __download_data()
+    __download_data()
     __process_data()
 
     cursor.close()

@@ -20,14 +20,24 @@ CIK_MAP = 'cikMap'
 
 # Queries
 GET_PROCESSED_CIK_QUERY = 'SELECT cik from facts;'
-DROP_FACTS_TABLE_QUERY = 'DROP TABLE IF EXISTS FACTS;'
+DROP_FACTS_TABLE_QUERY = 'DROP TABLE IF EXISTS facts;'
 CREATE_FACTS_TABLE_QUERY = """CREATE TABLE IF NOT EXISTS facts (
                             cik varchar(13) not null primary key,
                             data jsonb
                         );"""
 INSERT_DATA_QUERY = """INSERT INTO facts (cik, data)
                      values('%s', (select * from to_jsonb('%s'::JSONB)))"""
-UPDATE_DATA_QUERY = """UPDATE facts set data='%s' where cik='%s'"""
+UPDATE_DATA_QUERY = """BEGIN;
+-- other operations
+SAVEPOINT sp1;
+INSERT INTO facts (cik, data)
+    values('%s', (select * from to_jsonb('%s'::JSONB)));
+-- Assume the above fails because of a unique key violation,
+-- so now we issue these commands:
+ROLLBACK TO sp1;
+UPDATE facts set data='%s' where cik='%s';
+-- continue with other operations, and eventually
+COMMIT;"""
 GET_DATA_QUERY = "SELECT data FROM facts where cik = '%s'"
 APPEND_CIK_QUERY = " or cik = '%s'"
 
