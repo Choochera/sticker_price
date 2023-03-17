@@ -43,6 +43,7 @@ def __drop_facts(connection, cursor) -> None:
     cursor.execute(const.DROP_FACTS_TABLE_QUERY)
     connection.commit()
 
+
 def __delete_data() -> None:
     print("Deleting current facts data...")
     for file_name in listdir(const.DATA_DIRECTORY):
@@ -51,6 +52,7 @@ def __delete_data() -> None:
             file_name.endswith(const.JSON_EXTENSION)
         ):
             os.remove(const.DATA_DIRECTORY + '\\' + file_name)
+
 
 def __download_data() -> None:
     print("Downloading facts data from EDGAR...")
@@ -72,9 +74,15 @@ def __process_data() -> list:
     fileAdded = False
     for i in range(len(tempFiles)):
         with open('Temp\\' + tempFiles[i]) as openTempFile:
-            try: 
+            try:
                 with open('Data\\' + tempFiles[i]) as openDataFile:
-                    if (filecmp(openTempFile, openDataFile, shallow=False)):
+                    if (
+                        not filecmp.cmp(
+                            openTempFile.name,
+                            openDataFile.name,
+                            shallow=False
+                        )
+                    ):
                         cik = openTempFile.name[5:-5]
                         __update_database(openTempFile.name, cik)
                         fileAdded = True
@@ -89,22 +97,23 @@ def __process_data() -> list:
 
 
 def __update_database(fileToProcess, cik) -> None:
-        print(fileToProcess)
-        with open(fileToProcess) as file:
+    print(fileToProcess)
+    with open(fileToProcess) as file:
+        try:
+            data = json.load(file)
+            text = json.dumps(data)
+            text = text.replace('\'', const.EMPTY)
             try:
-                data = json.load(file)
-                text = json.dumps(data)
-                text = text.replace('\'', const.EMPTY)
-                try:
-                    cursor.execute(const.UPDATE_DATA_QUERY % (
-                        text,
-                        cik
-                    ))
-                except psycopg2.errors.UniqueViolation:
-                    pass
-            except OSError:
+                cursor.execute(const.UPDATE_DATA_QUERY % (
+                    text,
+                    cik
+                ))
+            except psycopg2.errors.UniqueViolation:
                 pass
-        connection.commit()
+        except OSError:
+            pass
+    connection.commit()
+
 
 if __name__ == '__main__':
 
@@ -126,11 +135,11 @@ if __name__ == '__main__':
         __drop_facts(connection, cursor)
         __delete_data()
         connection.commit()
-        
+
     __initialize_db(connection, cursor)
     __download_data()
     __process_data()
-        
+
     cursor.close()
     connection.close()
 
