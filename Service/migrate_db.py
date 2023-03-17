@@ -80,7 +80,7 @@ def __process_data() -> list:
                         not filecmp.cmp(
                             openTempFile.name,
                             openDataFile.name,
-                            shallow=False
+                            shallow=True
                         )
                     ):
                         cik = openTempFile.name[5:-5]
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         connection.commit()
 
     __initialize_db(connection, cursor)
-    __download_data()
+    # __download_data()
     __process_data()
 
     cursor.close()
