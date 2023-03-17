@@ -5,6 +5,7 @@ HOST = 'localhost'
 DATABASE_NAME = 'postgres'
 USER_AGENT_VALUE = 'XYZ/3.0'
 DATA_DIRECTORY = 'Data'
+TEMP_DIRECTORY = 'Temp'
 CIK_LIST = 'cikList'
 DEFAULT_DB_USERNAME = 'postgres'
 DEFAULT_DB_PASSWORD = 'password'
@@ -26,6 +27,7 @@ CREATE_FACTS_TABLE_QUERY = """CREATE TABLE IF NOT EXISTS facts (
                         );"""
 INSERT_DATA_QUERY = """INSERT INTO facts (cik, data)
                      values('%s', (select * from to_jsonb('%s'::JSONB)))"""
+UPDATE_DATA_QUERY = """UPDATE facts set data='%s' where cik='%s'"""
 GET_DATA_QUERY = "SELECT data FROM facts where cik = '%s'"
 APPEND_CIK_QUERY = " or cik = '%s'"
 

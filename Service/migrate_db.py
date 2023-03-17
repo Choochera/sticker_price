@@ -8,6 +8,8 @@ from os import listdir
 from io import BytesIO
 from urllib.request import Request, urlopen
 from zipfile import ZipFile
+import shutil
+import filecmp
 
 
 def __get_db_auth() -> list[str]:
@@ -30,31 +32,16 @@ def __get_db_connection():
     return conn
 
 
-def __get_bulk_processed_cik(connection, cursor) -> list[str]:
-    print("Retrieving list of processed CIK...")
+def __initialize_db(connection, cursor) -> None:
+    print("Initializing database connection..")
     cursor.execute(const.CREATE_FACTS_TABLE_QUERY)
-    cursor.execute(const.GET_PROCESSED_CIK_QUERY)
-    cikList = cursor.fetchall()
     connection.commit()
-    return cikList
 
 
 def __drop_facts(connection, cursor) -> None:
     print("Dropping facts table from database...")
     cursor.execute(const.DROP_FACTS_TABLE_QUERY)
     connection.commit()
-
-
-def __download_data() -> None:
-    print("Downloading facts data from EDGAR...")
-    req = Request(
-        url=const.EDGAR_URL + const.DATA_ZIP_PATH,
-        headers={'User-Agent': const.USER_AGENT_VALUE}
-    )
-    with urlopen(req) as zipresp:
-        with ZipFile(BytesIO(zipresp.read())) as zfile:
-            zfile.extractall(const.DATA_DIRECTORY)
-
 
 def __delete_data() -> None:
     print("Deleting current facts data...")
@@ -65,6 +52,59 @@ def __delete_data() -> None:
         ):
             os.remove(const.DATA_DIRECTORY + '\\' + file_name)
 
+def __download_data() -> None:
+    print("Downloading facts data from EDGAR...")
+    req = Request(
+        url=const.EDGAR_URL + const.DATA_ZIP_PATH,
+        headers={'User-Agent': const.USER_AGENT_VALUE}
+    )
+    with urlopen(req) as zipresp:
+        with ZipFile(BytesIO(zipresp.read())) as zfile:
+            os.mkdir('Temp')
+            zfile.extractall(const.TEMP_DIRECTORY)
+
+
+def __process_data() -> list:
+    print("Processing data updates..")
+    tempFiles = [
+            os.path.relpath(file) for file in os.listdir(const.TEMP_DIRECTORY)
+        ]
+    fileAdded = False
+    for i in range(len(tempFiles)):
+        with open('Temp\\' + tempFiles[i]) as openTempFile:
+            try: 
+                with open('Data\\' + tempFiles[i]) as openDataFile:
+                    if (filecmp(openTempFile, openDataFile, shallow=False)):
+                        cik = openTempFile.name[5:-5]
+                        __update_database(openTempFile.name, cik)
+                        fileAdded = True
+            except FileNotFoundError:
+                cik = openTempFile.name[5:-5]
+                __update_database(openTempFile.name, cik)
+                fileAdded = True
+        if (fileAdded):
+            os.replace('Temp\\' + tempFiles[i], 'Data\\' + tempFiles[i])
+            fileAdded = False
+    shutil.rmtree('Temp')
+
+
+def __update_database(fileToProcess, cik) -> None:
+        print(fileToProcess)
+        with open(fileToProcess) as file:
+            try:
+                data = json.load(file)
+                text = json.dumps(data)
+                text = text.replace('\'', const.EMPTY)
+                try:
+                    cursor.execute(const.UPDATE_DATA_QUERY % (
+                        text,
+                        cik
+                    ))
+                except psycopg2.errors.UniqueViolation:
+                    pass
+            except OSError:
+                pass
+        connection.commit()
 
 if __name__ == '__main__':
 
@@ -86,49 +126,11 @@ if __name__ == '__main__':
         __drop_facts(connection, cursor)
         __delete_data()
         connection.commit()
-
-    cikTupleList = __get_bulk_processed_cik(connection, cursor)
-    files = [
-        os.path.abspath(file) for file in os.listdir(const.DATA_DIRECTORY)
-    ]
-    if (len(files) < 3):
-        __download_data()
-        files = [
-            os.path.abspath(file) for file in os.listdir(const.DATA_DIRECTORY)
-        ]
-        print("Inserting json data into database...")
-        cikList = []
-        filesToProcess = []
-        for i in range(len(files)):
-            cikIndex = files[i].find(const.CIK)
-            files[i] = '%s\\%s\\%s' % (files[i][:cikIndex],
-                                       const.DATA_DIRECTORY,
-                                       files[i][cikIndex:])
-            cik = files[i][-18:].replace(const.JSON_EXTENSION, const.EMPTY)
-            cikTuple = (cik,)
-            if (
-                cikTuple not in cikTupleList and
-                const.CIK_MAP not in files[i]
-            ):
-                cikList.append(cik)
-                filesToProcess.append(files[i])
-
-        print("Data being inserted: ")
-        for i in range(len(filesToProcess)):
-            print(filesToProcess[i])
-            with open(filesToProcess[i]) as file:
-                data = json.load(file)
-                text = json.dumps(data)
-                text = text.replace('\'', const.EMPTY)
-                try:
-                    cursor.execute(const.INSERT_DATA_QUERY % (
-                        cikList[i],
-                        text
-                    ))
-                except psycopg2.errors.UniqueViolation:
-                    pass
-            connection.commit()
-
+        
+    __initialize_db(connection, cursor)
+    __download_data()
+    __process_data()
+        
     cursor.close()
     connection.close()
 

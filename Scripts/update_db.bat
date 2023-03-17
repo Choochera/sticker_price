@@ -1,3 +1,3 @@
 cd ../Service
-python migrate_db.py True
+python migrate_db.py
 cmd /k
