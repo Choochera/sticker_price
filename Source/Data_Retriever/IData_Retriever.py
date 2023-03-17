@@ -37,7 +37,7 @@ class IData_Retriever(ABC):
     @abstractmethod
     def retrieve_long_term_debt_parts(self) -> list[list[dict]]:
         pass
-    
+
     def retrieve_fy_growth_estimate(self) -> float:
         url = const.ZACKS_URL % self.symbol
         try:
